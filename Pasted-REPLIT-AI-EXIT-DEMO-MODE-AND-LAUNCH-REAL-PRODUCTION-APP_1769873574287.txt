@@ -1,0 +1,128 @@
+REPLIT AI — EXIT DEMO MODE AND LAUNCH REAL PRODUCTION APP (SAFE CUTOVER)
+
+Objective:
+Disable DEMO MODE and switch Workforce Connect to FULL PRODUCTION MODE.
+This must be done safely, without data loss, broken flows, or test data leaking into production.
+
+====================================================
+1) DEMO MODE SHUTDOWN STRATEGY (DO NOT HARD DELETE)
+====================================================
+Do NOT simply delete demo code.
+
+Instead:
+- Introduce an environment flag:
+  DEMO_MODE=false
+
+Rules:
+- Demo mode logic must be conditionally disabled
+- Demo seed data must NOT load when DEMO_MODE=false
+- Demo banners, sample data, mock users, fake workplaces must be hidden
+
+====================================================
+2) DATA CLEANUP (MANDATORY BEFORE LAUNCH)
+====================================================
+Before disabling demo mode:
+
+A) Identify and REMOVE or ARCHIVE:
+- Demo users
+- Demo workers
+- Demo workplaces
+- Demo timesheets
+- Demo payroll batches
+
+Implementation:
+- Mark demo records with:
+  isDemo=true
+- Run a one-time cleanup script:
+  - Either delete demo records
+  - OR archive them (preferred for rollback)
+
+After cleanup:
+- Production DB must contain ONLY real users and real data.
+
+====================================================
+3) AUTHENTICATION & ACCESS RULES (PRODUCTION)
+====================================================
+Ensure:
+- No auto-login
+- No demo bypass for:
+  - Admin access
+  - HR access
+  - Worker access
+- All users must authenticate via real credentials
+- Role-based access enforced strictly:
+  - Admin
+  - HR
+  - Worker
+
+====================================================
+4) FEATURE GATES — MUST BE REAL
+====================================================
+Confirm the following are LIVE and enforced:
+
+✔ Management Hub (Admin + HR)
+✔ Workplaces creation & editing
+✔ Address autocomplete (Google Places)
+✔ Worker assignment to workplaces
+✔ GPS-based TITO validation (no bypass)
+✔ Timesheets submission & approval
+✔ Payroll period processing
+✔ App Store download links correct
+✔ Business website live at root domain
+
+If any feature is incomplete → STOP and fix before continuing.
+
+====================================================
+5) MOBILE APP CONFIGURATION (PRODUCTION)
+====================================================
+- Remove any “Demo” labels or banners in the app
+- Ensure API base URL points to production domain
+- Ensure production database is being used
+- Confirm GPS permission prompts are production-safe
+
+====================================================
+6) APP STORE SAFETY CHECK (CRITICAL)
+====================================================
+Before pushing the production update:
+
+Verify App Store Connect:
+- Location permission text clearly explains:
+  “Location is used only to verify time-in/time-out proximity at worksites.”
+- No language implies employee surveillance or continuous tracking
+- No references to “demo”, “test”, or “sandbox” in UI or metadata
+
+====================================================
+7) DEPLOYMENT STEPS (ORDER MATTERS)
+====================================================
+1. Disable DEMO_MODE in environment
+2. Run demo cleanup script
+3. Deploy backend (server)
+4. Deploy web app
+5. Build and publish mobile app
+6. Submit updated build to App Store Connect
+7. Release after approval
+
+====================================================
+8) POST-LAUNCH VERIFICATION CHECKLIST
+====================================================
+After deployment, confirm:
+
+✔ New user signup works
+✔ HR can create a workplace with autocomplete
+✔ Worker cannot TITO outside GPS radius
+✔ Payroll batch can be created for real period
+✔ No demo data visible anywhere
+✔ App Store users receive update
+
+====================================================
+9) ROLLBACK PLAN (REQUIRED)
+====================================================
+- Keep demo cleanup script reversible (if archived)
+- Keep DEMO_MODE flag reversible for 24 hours only
+- Log all errors aggressively for first 72 hours
+
+====================================================
+FINAL INSTRUCTION
+====================================================
+Proceed to disable demo mode and transition Workforce Connect to full production.
+Do not partially implement. Treat this as a live system cutover.

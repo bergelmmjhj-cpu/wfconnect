@@ -1,0 +1,58 @@
+Fix the exact ClawdAI failure shown in these conversations.
+
+Observed problems:
+1. When I say:
+   “even if you cant find a shift for the specific number, still let us know as the staff might have used another number. Also apply same logic to client requests...”
+   the assistant replies with “Analysis unavailable.”
+2. When I say:
+   “Try BergelMMJ”
+   it treats it like an analytics query instead of a worker lookup follow-up.
+3. When I say:
+   “4372188887”
+   it again returns “Analysis unavailable” instead of treating it as the worker phone number for the pending shift creation flow.
+4. The assistant loses context between messages and does not maintain the unfinished shift creation task.
+
+Implement these fixes:
+
+A. Add conversational state
+Store a pending workflow when a request is incomplete:
+- type: create_shift
+- worker query
+- workplace query
+- date
+- time range
+- missing fields
+- last resolution attempt
+
+B. Interpret short follow-ups contextually
+If there is an active pending workflow:
+- a short name-like input such as “Try BergelMMJ” should be treated as a worker resolution retry
+- a phone-number-like input such as “4372188887” should be treated as worker phone lookup
+- do not route these to analytics modules
+
+C. Add fallback handling
+If exact worker is not found:
+- fuzzy match name
+- search aliases
+- search by phone if provided
+- if still not found, respond with operational options, not failure
+
+D. Add unmatched-number logic for SMS
+If an incoming text suggests:
+- staff cannot attend work
+- client is requesting staffing
+then generate an operational alert even without an exact CRM match
+
+E. Remove “Analysis unavailable” from these flows
+For staffing operations, the assistant must always produce:
+- understanding summary
+- what was matched
+- what was not matched
+- next action or fallback alert
+
+Please update routing, intent detection, and context handling so these specific examples behave correctly.
+Then show:
+- root cause
+- files changed
+- test cases added
+- example outputs for the exact messages above

@@ -1,0 +1,157 @@
+====================================================
+A) DATABASE (PRISMA) — REQUIRED TABLES / FIELDS
+====================================================
+1) Workplaces
+Create Prisma model `Workplace` with:
+- id (cuid)
+- name String (required)
+- addressLine1 String
+- city String
+- province String
+- postalCode String
+- country String @default("Canada")
+- latitude Float
+- longitude Float
+- geofenceRadiusMeters Int @default(150)
+- isActive Boolean @default(true)
+- createdAt DateTime @default(now())
+- updatedAt DateTime @updatedAt
+
+2) Workplace Assignments
+Create Prisma model `WorkplaceAssignment` with:
+- id (cuid)
+- workplaceId String (FK)
+- workerUserId String (FK to User)
+- status Enum: INVITED | ACTIVE | SUSPENDED | REMOVED  (default ACTIVE)
+- invitedByUserId String (FK to User)
+- invitedAt DateTime @default(now())
+- acceptedAt DateTime? (optional)
+- notes String?
+- createdAt DateTime @default(now())
+- updatedAt DateTime @updatedAt
+Add unique constraint: (workplaceId, workerUserId) unique.
+
+3) TITO GPS fields
+Extend existing TITO log model (TITOLog or equivalent):
+Add:
+- workplaceId String? (FK Workplace) OR store via assignment/shift (pick the cleanest)
+- gpsLat Float?
+- gpsLng Float?
+- distanceMeters Float?
+- gpsVerified Boolean @default(false)
+- gpsFailureReason String?
+Also keep UTC timestamps.
+
+Migrations:
+- Create and run Prisma migration.
+- Update seed script to insert the CAE workplace and sample assignment.
+
+====================================================
+B) SEED DATA — MUST BE CREATED
+====================================================
+Create workplace in seed:
+- Name: “CAE Aviation Training & Services Toronto”
+- Address: “2025 Logistics Dr, Mississauga ON L5S 1Z9”
+- Country: Canada
+- geofenceRadiusMeters: 150
+Coordinates:
+- Do NOT guess coordinates.
+- Implement one of these:
+  Option 1 (preferred): call a geocoding service if env var present (GOOGLE_GEOCODING_API_KEY or similar)
+  Option 2: require admin to set coordinates before GPS validation works (seed leaves lat/lng null and sets isActive=false until configured)
+Choose whichever is quickest + safe.
+
+Also seed:
+- 1 admin
+- 1 worker
+- 1 workplace assignment linking that worker to CAE workplace (status ACTIVE)
+
+====================================================
+C) API ENDPOINTS (EXPRESS) — RBAC ENFORCED
+====================================================
+All endpoints require JWT auth.
+
+Admin-only:
+Workplaces:
+- POST /api/workplaces
+- GET /api/workplaces
+- GET /api/workplaces/:id
+- PUT /api/workplaces/:id
+- PATCH /api/workplaces/:id/toggle-active
+
+Assignments:
+- POST /api/workplaces/:id/invite-worker
+  body: { workerUserId, status? }  // default ACTIVE
+- GET /api/workplaces/:id/workers
+- PATCH /api/workplace-assignments/:id
+  body: { status, notes? }
+- DELETE /api/workplace-assignments/:id
+
+Worker self:
+- GET /api/me/workplaces  // worker can view assigned workplaces
+
+TITO (Worker):
+- POST /api/tito/time-in
+- POST /api/tito/time-out
+Both must:
+- require workplaceId OR derive workplaceId from shiftAssignment if your data model supports it
+- fetch workplace coords + radius
+- read device GPS from request body: { gpsLat, gpsLng }
+- compute distance (Haversine)
+- allow only if distance <= radius
+- store gpsLat, gpsLng, distanceMeters, gpsVerified, gpsFailureReason on the TITO record
+Return clear errors if:
+- workplace not configured (missing coords)
+- gps missing/permission denied
+- outside radius
+
+====================================================
+D) GPS PROXIMITY — MUST BE REAL AND ENFORCED
+====================================================
+Implement Haversine distance calculation on the SERVER.
+Do not trust the client to validate.
+Persist verification result on each TITO event.
+
+====================================================
+E) UI — ADMIN MANAGEMENT HUB + WORKER VIEW
+====================================================
+Admin UI:
+- Add “Management” entry (admin only)
+- Management hub contains:
+  - Workplaces tab
+  - Workers/Invites tab
+  - Assignments view (can be inside workplaces detail)
+Workplaces screens:
+- List with search, create button
+- Create/Edit form includes name, address, radius, coordinates (lat/lng required to activate GPS)
+- Detail page shows assigned workers and invite actions
+Worker UI:
+- Add “My Workplaces” page or section
+- Show list of assigned workplaces and radius
+TITO UI:
+- When worker attempts time-in/out:
+  - request GPS permission
+  - capture GPS coordinates
+  - send to API
+  - show precise error if outside radius
+
+====================================================
+F) TESTS / VERIFICATION (MINIMUM)
+====================================================
+Add a minimal test or script to verify:
+- distance calc correctness
+- API blocks outside radius
+- API allows inside radius
+
+====================================================
+G) OUTPUT AFTER CODING (MANDATORY)
+====================================================
+After implementing, print in full:
+- server/prisma/schema.prisma
+- seed script file
+- server routes for workplaces + assignments + tito (files you created/changed)
+- the Admin Management UI page/component
+- the Worker “My Workplaces” UI page/component
+- the GPS/TITO client function that sends gpsLat/gpsLng
+
+DO NOT REMOVE DEMO MODE until all of the above is complete and working.

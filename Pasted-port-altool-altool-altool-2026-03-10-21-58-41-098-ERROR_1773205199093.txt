@@ -1,0 +1,31 @@
+port/altool'...
+[altool] 
+[altool] 2026-03-10 21:58:41.098 ERROR: [altool.600002BF4140] [ContentDelivery.Uploader.600002BF4140] 
+[altool] =======================================
+[altool] UPLOAD FAILED with 2 errors
+[altool] =======================================
+[altool] 2026-03-10 21:58:41.102 ERROR: [altool.600002BF4140] Error uploading '/var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/55ec5953-a95c-4bba-beaa-00cadfecdaf7.ipa'.
+[altool] 2026-03-10 21:58:41.102 ERROR: [altool.600002BF4140] Validation failed Invalid Pre-Release Train. The train version '1.0.5' is closed for new build submissions (ID: 26d76f21-a6ac-4344-a0c6-7f4f3bc7b297) (409)
+[altool]  {
+[altool]     NSLocalizedDescription = "Validation failed";
+[altool]     NSLocalizedFailureReason = "Invalid Pre-Release Train. The train version '1.0.5' is closed for new build submissions (ID: 26d76f21-a6ac-4344-a0c6-7f4f3bc7b297)";
+[altool]     NSUnderlyingError = "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=Invalid Pre-Release Train. The train version '1.0.5' is closed for new build submissions, id=26d76f21-a6ac-4344-a0c6-7f4f3bc7b297, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=Invalid Pre-Release Train. The train version '1.0.5' is closed for new build submissions, NSLocalizedDescription=Validation failed}";
+[altool]     "iris-code" = "STATE_ERROR.VALIDATION_ERROR";
+[altool] }
+
+[altool] 2026-03-10 21:58:41.102 ERROR: [altool.600002BF4140] Validation failed This bundle is invalid. The value for key CFBundleShortVersionString [1.0.5] in the Info.plist file must contain a higher version than that of the previously approved version [1.0.5]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring (ID: 4fa70340-a215-4e7e-9742-951a80f0a758) (409)
+[altool]  {
+[altool]     NSLocalizedDescription = "Validation failed";
+
+[altool]     NSLocalizedFailureReason = "This bundle is invalid. The value for key CFBundleShortVersionString [1.0.5] in the Info.plist file must contain a higher version than that of the previously approved version [1.0.5]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring (ID: 4fa70340-a215-4e7e-9742-951a80f0a758)";
+
+[altool]     NSUnderlyingError = "Error Domain=IrisAPI Code=-19241 \"Validation failed\" UserInfo={status=409, detail=This bundle is invalid. The value for key CFBundleShortVersionString [1.0.5] in the Info.plist file must contain a higher version than that of the previously approved version [1.0.5]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring, id=4fa70340-a215-4e7e-9742-951a80f0a758, code=STATE_ERROR.VALIDATION_ERROR, title=Validation failed, NSLocalizedFailureReason=This bundle is invalid. The value for key CFBundleShortVersionString [1.0.5] in the Info.plist file must contain a higher version than that of the previously approved version [1.0.5]. Please find more information about CFBundleShortVersionString at https://developer.apple.com/documentation/bundleresources/information_property_list/cfbundleshortversionstring, NSLocalizedDescription=Validation failed}";
+[altool]     "iris-code" = "STATE_ERROR.VALIDATION_ERROR";
+[altool] }
+Application Loader output above ^
+The call to the altool completed with a non-zero exit status: 1. This indicates a failure.
+Could not download/upload from App Store Connect!
+[!] Error uploading ipa file: 
+ [Application Loader Error Output]: The call to the altool completed with a non-zero exit status: 1. This indicates a failure.
+Error: fastlane run pilot ipa:app-e9a70f15-7934-4ba8-97da-be315628e1a5.ipa apple_id:6758402360 skip_waiting_for_build_processing:true api_key_path:asc_api_key-d75fc623-467f-460a-a5f0-9ed319901fe1.json exited with non-zero code: 1
+/bin/bash -eo pipefail /var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/eas-build/a0a7bbc2-96ba-48cb-8c71-84dc06934499/steps/eff27754-d2ea-48a9-ba6f-88f1a33f66ef/scripts/f389575e-ad13-4da9-9bf1-bf3e87794d88.sh exited with non-zero code: 1

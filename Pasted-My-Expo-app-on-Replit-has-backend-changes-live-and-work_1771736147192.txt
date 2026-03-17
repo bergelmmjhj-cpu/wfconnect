@@ -1,0 +1,21 @@
+My Expo app on Replit has backend changes live and working (API calls like GET /api/tito/my-logs return updated data in production logs), but frontend changes (UI updates, new buttons, screens like TITO Logs or Shift Detail) are NOT reflecting in Expo Go on my phone even after multiple publishes.
+
+What I've already tried (none worked):
+- Published multiple times via the Replit Deployments/Publish button (build runs "npm run expo:static:build && npm run server:build" then "npm run server:prod")
+- Force closed and reopened Expo Go
+- Deleted and reinstalled Expo Go completely
+- Reloaded via shake → dev menu → Reload
+- Checked production logs: backend is updated, but frontend bundle seems stale
+- No dev server running during tests; using published production URL/QR
+
+The problem is clearly frontend bundle caching or manifest not updating properly on the production deployment. Expo Go is loading an old cached JS bundle despite fresh publish.
+
+Please help me fix this reliably. Step-by-step:
+1. Confirm if the published static bundles (in server_dist or wherever they serve from) are actually rebuilt and fresh—check file hashes/timestamps if possible.
+2. Give exact shell commands to run in Replit to clear all possible caches (Metro, Expo, npm) and force a clean static export/build before republishing.
+3. Suggest any app.json / app.config changes needed (e.g. updates.url to match prod domain, fallbackToCacheTimeout: 0, version bump, extra.eas.projectId if using EAS).
+4. Recommend running eas update (if EAS is set up) or manual expo export --public-url + republish.
+5. If needed, how to undeploy/redeploy or flush any Replit CDN/edge cache.
+6. Workaround: force Expo Go to treat it as new by entering the full production URL manually (https://your-project.replit.app or similar) instead of QR.
+
+Prioritize solutions that force a fresh bundle serve from Replit's production endpoint. Test with a simple visible change like changing a button text to "FIXED FEB 2026". Provide the full sequence I should follow right now.

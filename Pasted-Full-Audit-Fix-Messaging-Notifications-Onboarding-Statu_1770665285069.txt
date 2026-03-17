@@ -1,0 +1,246 @@
+Full Audit & Fix: Messaging, Notifications, Onboarding Status
+
+We have a Workforce Connect app with Worker, HR, and Admin roles.
+Multiple critical sync and state issues exist across messaging, notifications, and onboarding status.
+
+Your task is to investigate, identify root causes, then fix.
+Do NOT assume. Do NOT apply UI-only hacks.
+
+A) Worker ↔ HR Messaging Issues (Critical)
+1) Worker vs HR Message Desynchronization
+
+Observed:
+
+HR POV shows messages correctly
+
+Worker POV is out of sync:
+
+Missing HR messages
+
+Sometimes shows duplicated messages
+
+Sometimes appears partially empty
+
+Worker may only see updates after leaving and re-entering the conversation
+
+Investigate:
+
+Compare Worker vs HR message fetch logic:
+
+endpoints
+
+filters
+
+conversationId usage
+
+senderId / receiverId logic
+
+Confirm both roles pull from the same source of truth
+
+Check for role-based filtering bugs
+
+Verify caching / react-query keys / invalidation
+
+2) New Messages Appear at the TOP Instead of Bottom
+
+Observed:
+
+Newest messages sometimes insert at the top
+
+Worker often doesn’t see them because scroll stays at bottom
+
+Investigate:
+
+FlatList / ScrollView usage
+
+inverted={true} differences between roles
+
+Backend vs frontend sorting (ASC vs DESC)
+
+Whether messages are appended, prepended, or replaced
+
+Fix Requirements:
+
+Messages must always render chronologically (oldest → newest)
+
+New messages appear at the bottom
+
+Auto-scroll to newest message on send/receive
+
+3) Duplicate Messages (Worker POV)
+
+Observed:
+
+Worker sometimes sees duplicate copies of the same message
+
+Investigate:
+
+Optimistic UI insertion + refetch duplication
+
+Missing deduplication by message ID
+
+Message array being merged incorrectly
+
+Fix:
+
+Deduplicate messages reliably
+
+Ensure optimistic messages reconcile cleanly with server response
+
+4) Worker Not Seeing Messages in Real Time
+
+Observed:
+
+HR sends a message
+
+Worker does not see it immediately
+
+Investigate:
+
+Polling / refetch intervals
+
+Subscription logic
+
+Whether worker chat state updates at all
+
+Whether messages exist in state but render off-screen
+
+B) Push Notifications Not Working (Messages + Shifts)
+5) No Phone Notifications
+
+Observed:
+
+No push notifications for:
+
+New messages
+
+New shifts assigned or updated
+
+Investigate:
+
+Expo notifications setup:
+
+permission requests
+
+Expo push token generation (real device)
+
+token storage in backend
+
+Whether backend triggers notifications on:
+
+message creation
+
+shift assignment/update
+
+Confirm tokens are tied to correct users and roles
+
+Then implement end-to-end push notifications:
+
+Register tokens per user (support multiple devices)
+
+Send notifications to the correct recipient (not sender)
+
+Handle invalid tokens
+
+Deep-link notifications to:
+
+Conversation screen
+
+Shift details screen
+
+C) Onboarding Status Desync (NEW – Critical)
+6) Worker Completed Onboarding but HR/Admin Shows “Pending”
+
+Observed:
+
+Worker Marjorie Kae Dare has:
+
+Signed agreements
+
+Completed all onboarding steps
+
+Worker POV shows onboarding complete
+
+HR/Admin POV still shows:
+
+“Onboarding: AGREEMENT PENDING”
+
+This is a data consistency bug, not UI-only.
+
+Investigate:
+
+Where onboarding status is stored:
+
+user table
+
+onboarding table
+
+agreements table
+
+Which event updates onboarding completion:
+
+signature submission
+
+final step completion
+
+Whether:
+
+Worker updates one table
+
+HR/Admin reads from a different table or cached value
+
+Whether admin list is using stale cached data
+
+Whether backend mutation updates only worker-facing data
+
+Fix Requirements:
+
+Ensure onboarding completion is:
+
+Single source of truth
+
+Updated atomically when worker completes final step
+
+Ensure HR/Admin views:
+
+Read from the same canonical status
+
+Reflect changes immediately (cache invalidation / refetch)
+
+No hardcoded role-based overrides
+
+D) Deliverables (Mandatory)
+
+Root Cause Report
+
+One bullet per issue
+
+Exact cause (not assumptions)
+
+Code Fixes
+
+Messaging sync
+
+Ordering & auto-scroll
+
+Deduplication
+
+Real-time refresh
+
+Push notifications
+
+Onboarding status consistency
+
+Verification Checklist
+
+Worker & HR see identical messages
+
+New messages always appear at bottom
+
+No duplicate messages
+
+Worker sees HR messages instantly
+
+Push notifications fire on real devices
+
+Onboarding status updates instantly across Worker / HR / Admin

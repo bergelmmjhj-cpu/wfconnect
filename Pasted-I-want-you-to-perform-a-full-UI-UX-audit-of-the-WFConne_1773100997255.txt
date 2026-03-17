@@ -1,0 +1,129 @@
+I want you to perform a full UI/UX audit of the WFConnect application and identify layout, spacing, and visual consistency problems.
+
+Look carefully at the screenshots and inspect the frontend code responsible for these pages.
+
+Pages to analyze:
+• Login page
+• Settings page
+• Any shared layout components (containers, cards, buttons, forms)
+
+Your task is NOT to immediately change code. First diagnose the issues.
+
+----------------------------------
+
+1. Layout and Container Issues
+
+From the screenshots the app appears extremely stretched horizontally and poorly constrained.
+
+Investigate:
+
+• Whether the app is missing a max-width container
+• If pages are using full-width layout when they should be centered
+• If padding and margins are inconsistent
+• If vertical spacing between sections is too large
+
+Questions to answer:
+
+• Is the main layout container missing max-width constraints?
+• Are margins and paddings standardized?
+• Are sections using consistent spacing tokens?
+
+----------------------------------
+
+2. Button Design and Alignment
+
+The buttons appear oversized and stretched.
+
+Examples:
+• Sign In button spans the entire page width
+• Sign Out button is extremely wide
+• Buttons are not visually grouped with related fields
+
+Investigate:
+
+• Button width rules
+• If buttons are incorrectly set to width: 100%
+• Whether buttons should instead be contained within form width
+
+Report:
+
+• What CSS classes control buttons
+• Whether button sizes follow a design system
+• If button height/padding is excessive
+
+----------------------------------
+
+3. Form Spacing
+
+Login form and settings form have spacing issues:
+
+• Fields stretch across the page
+• Labels and inputs lack proper grouping
+• Too much empty whitespace between sections
+
+Investigate:
+
+• Form container widths
+• Field grouping logic
+• Vertical rhythm between elements
+
+----------------------------------
+
+4. Component Consistency
+
+Check if the application has a design system.
+
+Determine whether there are:
+
+• Standard spacing tokens (8px / 16px / 24px etc)
+• Standard button sizes
+• Standard card containers
+• Reusable form components
+
+If not, identify what is missing.
+
+----------------------------------
+
+5. Responsiveness
+
+Check how the layout behaves across screen sizes.
+
+Investigate:
+
+• Mobile layout
+• Tablet layout
+• Desktop layout
+
+Verify whether breakpoints exist.
+
+----------------------------------
+
+6. Code Structure
+
+Identify the files responsible for layout:
+
+Examples to inspect:
+• App layout component
+• Page container components
+• Button component
+• Form components
+• CSS / Tailwind configuration
+
+Explain:
+
+• Which files control spacing
+• Which files control width
+• Which components should be standardized
+
+----------------------------------
+
+After the investigation, produce a report containing:
+
+1. The root causes of the spacing and layout problems
+2. Which components are responsible
+3. Which CSS rules are causing the stretching
+4. Missing layout constraints
+5. A recommended UI layout structure
+6. A plan to fix the design system for the entire app
+
+Do NOT implement changes yet. First deliver the diagnosis.

@@ -1,0 +1,165 @@
+Replit AI — perform a full refactor and stabilization of the TITO (time tracking) system. Implement real code changes, not just a plan. After finishing, reply with:
+
+- Exact files modified
+- Key code snippets added/changed
+- Short explanation per change
+- Confirmation that everything compiles and runs
+
+========================================
+1) CONSOLIDATE TITO LOGS (REMOVE DUPLICATES)
+========================================
+
+Problem:
+There are two TITO sections:
+- Bottom Tab → TitoScreen.tsx (functional)
+- Management → TitoLogsAdminScreen.tsx (dead placeholder)
+
+Required Fix:
+- Remove the placeholder logic entirely.
+- Either:
+  A) Reuse TitoScreen.tsx inside Management, OR
+  B) Extract shared logic into a reusable component (e.g., <TitoLogsList />) used by both routes.
+
+Result:
+- Management > TITO Logs must show the SAME data, filters, approve/dispute actions, and records as the Tito tab.
+- Delete the placeholder text permanently.
+- Ensure no duplicated logic exists.
+
+========================================
+2) FIX TIME IN / TIME OUT CONFLICTS
+========================================
+
+Current Issue:
+Identical timestamps can occur (clock-in and clock-out within same second).
+
+Required Fixes (SERVER SIDE ONLY — authoritative):
+
+A) Minimum Duration Rule
+- In server/routes.ts (time-out endpoint):
+  - Calculate difference between clock-in and current time.
+  - If < 60 seconds → reject with:
+    "Minimum shift duration is 1 minute."
+
+B) Prevent Double Clock-Out
+- If a record already has a clockOut value → reject.
+- Ensure idempotency: repeated taps must not overwrite timestamps.
+
+C) Only One Active Session
+- A user may not clock in if an open (no clockOut) record exists.
+
+========================================
+3) STRICT SHIFT-BOUND VALIDATION
+========================================
+
+All time entries must be tied to an ACTIVE, ACCEPTED shift.
+
+Each shift must include:
+- shiftStart (DateTime)
+- shiftEnd (DateTime)
+- earlyClockInGrace = 15 minutes
+- lateClockOutGrace = 30 minutes
+
+Validation Rules (SERVER ENFORCED):
+
+Clock-In Allowed Only If:
+NOW is within:
+[shiftStart - 15min, shiftEnd + 30min]
+
+Otherwise reject:
+"Clock-in is only allowed during your scheduled shift window."
+
+Clock-Out Allowed Only If:
+- User has active open log
+- NOW is within:
+[shiftStart, shiftEnd + 30min]
+
+Otherwise reject:
+"Clock-out must occur within your scheduled shift window."
+
+Same-Day Rule:
+- If shiftStart and shiftEnd are same calendar day:
+  → Clock-in and clock-out must also occur on that same day.
+- If overnight shift:
+  → Allow spanning midnight but still enforce bounds relative to shift window.
+
+Data Integrity:
+- Add shiftId to tito_logs (if missing).
+- Prevent clock-in without an accepted shift.
+- Prevent clock-in if shift not yet started beyond grace.
+
+========================================
+4) EMAIL TIMESHEET FOR PAYROLL (MOBILE)
+========================================
+
+Backend endpoints exist but are not exposed in mobile.
+
+Required:
+- Add visible "Email Timesheet for Payroll" button inside the mobile TITO screen.
+- Place in header OR as batch action for Approved entries.
+- Connect to existing backend endpoint:
+  (Use the correct one already implemented.)
+- Show toast:
+  Success → "Timesheet emailed to payroll"
+  Error → show server message.
+
+Ensure:
+- Works fully from mobile.
+- Not web-only.
+- Handles loading state.
+
+========================================
+5) UI IMPROVEMENTS
+========================================
+
+A) Reduce Spacing
+- In TitoCard.tsx:
+  - Reduce vertical padding/margins.
+  - Make cards compact but readable.
+  - Fit more records per screen.
+
+B) Sticky Filter Bar
+- Ensure All | Pending | Approved | Disputed filters remain sticky at top.
+- Use proper sticky layout (not overlapping absolute hack).
+- Ensure no excessive paddingTop workaround remains.
+
+========================================
+6) ADD TEXT + CALL ACTIONS (QUO INTEGRATION)
+========================================
+
+Add two buttons inside each TitoCard:
+
+Text
+- Trigger QUO texting via existing integration.
+- Use number: 289-670-5697
+- Pre-fill message:
+  "Regarding your TITO log on [date], please review."
+
+Call
+- Use 289-270-2031
+- Open phone dialer OR integrate with existing webhook/call flow.
+
+Buttons must:
+- Appear next to Approve / Dispute
+- Respect role permissions
+- Not break layout
+
+========================================
+7) FINAL VERIFICATION
+========================================
+
+After implementing everything:
+
+Confirm:
+- Management TITO shows real data
+- No placeholder exists anywhere
+- Identical timestamps impossible
+- Shift-bound validation enforced
+- Only one active session allowed
+- Email button works in mobile
+- Spacing reduced
+- Sticky filters work properly
+- Text/Call buttons visible and functional
+
+Reply with:
+"All TITO fixes implemented — ready for testing."
+And list modified files + snippets.

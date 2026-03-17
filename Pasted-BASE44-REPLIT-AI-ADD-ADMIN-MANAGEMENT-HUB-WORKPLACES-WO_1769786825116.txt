@@ -1,0 +1,169 @@
+BASE44 / REPLIT AI — ADD ADMIN MANAGEMENT HUB + WORKPLACES + WORKER INVITES + GPS PROXIMITY TITO (KEEP DEMO MODE FOR NOW)
+
+Do NOT remove demo mode yet. Before removing it, implement the following admin management functions end-to-end (DB + API + UI + seed data). This is for Workforce Connect.
+
+====================================================
+1) ADMIN MANAGEMENT HUB (CENTRAL CONTROL PAGE)
+====================================================
+Create a new Admin-only “Management” area inside the app where the Admin can manage everything.
+
+Requirements:
+- Route/screen: /admin (web) and a matching “Management” tab/screen in mobile (if mobile nav exists)
+- Role-gated: admin only (HR can have limited access later but not now)
+- Sections/Tabs inside Management:
+  A) Workplaces (Locations)
+  B) Worker Directory + Invites
+  C) Assignments (Worker ↔ Workplace)
+  D) System (optional placeholder)
+- Use a clean admin layout: left sidebar + content area on web; tabs/stack screens on mobile.
+
+====================================================
+2) WORKPLACES / LOCATIONS SYSTEM
+====================================================
+Admins must be able to create and manage Workplaces (deployment locations).
+
+Data model:
+Create a new table/entity “Workplace” (or Location/Site) with:
+- id
+- name (string, required)
+- addressLine1 (string)
+- city (string)
+- province (string)
+- postalCode (string)
+- country (string default "Canada")
+- latitude (float, required)
+- longitude (float, required)
+- geofenceRadiusMeters (int default 150)  // used for GPS proximity validation
+- isActive (boolean default true)
+- createdAt, updatedAt
+
+UI:
+- Workplaces list (search + filter active/inactive)
+- Create workplace form
+- Edit workplace form (including radius)
+- Workplace detail page showing:
+  - name + full address
+  - coordinates
+  - radius
+  - workers assigned/invited to this workplace
+
+Seed / default creation:
+Create this Workplace automatically (seed + also on first run if missing):
+- Name: “CAE Aviation Training & Services Toronto”
+- Address: “2025 Logistics Dr, Mississauga ON L5S 1Z9”
+- Country: Canada
+- Latitude/Longitude:
+  - Implement geocoding in code OR add a small admin action “Fetch coordinates from address”
+  - If you cannot geocode, allow admin to manually set lat/lng (required before enabling GPS validation)
+(Do NOT hardcode wrong coordinates.)
+
+====================================================
+3) INVITE / ASSIGN WORKERS WHO ALREADY SIGNED UP
+====================================================
+Admins need a function to “invite” workers who already have accounts.
+
+Interpretation:
+- Worker already registered in system
+- Admin selects worker(s) and assigns them to a workplace (deployment eligibility)
+
+Data model additions:
+- A join table “WorkplaceAssignment” (or “WorkerWorkplace”) with:
+  - id
+  - workplaceId
+  - workerUserId (or workerProfileId)
+  - status enum: invited | active | suspended | removed
+  - invitedByUserId
+  - invitedAt
+  - acceptedAt (optional: if you want worker confirmation later)
+  - notes (optional)
+  - createdAt, updatedAt
+
+Admin UI:
+- Worker Directory page:
+  - Search workers by name/phone/email
+  - Action: “Invite to Workplace”
+  - Dropdown: choose workplace
+  - Status indicator (invited/active/etc.)
+- Workplace detail:
+  - List of assigned workers
+  - Remove/suspend worker from workplace
+
+Worker UX (MVP):
+- Worker should see assigned workplace(s) in their profile or a simple “My Workplaces” section.
+- No acceptance flow needed for MVP unless quick to implement; default to “active” upon admin invite.
+
+====================================================
+4) GPS PROXIMITY FOR TITO MUST BE FUNCTIONAL
+====================================================
+Requirement:
+TITO check-in/out must validate that the worker is within the workplace radius.
+
+Implementation details:
+- When worker does Time-In/Time-Out:
+  - Fetch device GPS location (with permission flow)
+  - Compare distance from workplace lat/lng using Haversine formula
+  - If distance <= geofenceRadiusMeters: allow submission
+  - Else block submission with clear error:
+    “You are not within the required GPS radius of the workplace.”
+- Store on the TITO log:
+  - recordedLatitude, recordedLongitude
+  - distanceMeters
+  - gpsVerified boolean
+  - gpsFailureReason (optional)
+- Always store timestamps in UTC.
+
+Edge cases:
+- If workplace has no coordinates yet -> block TITO with message: “Workplace coordinates not configured. Contact admin.”
+- If GPS permissions denied -> block TITO with message: “Location permission required for TITO.”
+
+====================================================
+5) API ENDPOINTS (EXPRESS)
+====================================================
+Add endpoints (admin only unless stated):
+
+Workplaces:
+- POST /api/workplaces
+- GET /api/workplaces
+- GET /api/workplaces/:id
+- PUT /api/workplaces/:id
+- PATCH /api/workplaces/:id/toggle-active
+
+Assignments/Invites:
+- POST /api/workplaces/:id/invite-worker  (body: workerUserId, status default active)
+- GET /api/workplaces/:id/workers
+- PATCH /api/workplace-assignments/:id  (status updates)
+- DELETE /api/workplace-assignments/:id
+
+Worker self:
+- GET /api/me/workplaces   (worker sees assigned workplaces)
+
+TITO:
+- POST /api/tito/time-in  (requires workplaceId or shiftAssignmentId; must perform GPS validation)
+- POST /api/tito/time-out (same)
+- Ensure server verifies + stores distance and gpsVerified.
+
+====================================================
+6) UI NAVIGATION
+====================================================
+- Add “Management” nav item visible ONLY to admin.
+- Add “Workplaces” and “Workers” sections inside Management.
+
+====================================================
+7) TESTING / DEMO DATA
+====================================================
+- Keep demo mode enabled.
+- Add sample workers in seed data.
+- Create the CAE workplace in seed.
+- Create at least 1 assignment so admin can see it working.
+
+====================================================
+8) ACCEPTANCE CHECKLIST
+====================================================
+Consider the work complete only when:
+- Admin can open Management, create/edit workplaces, and see the CAE workplace
+- Admin can invite an existing worker to the CAE workplace
+- Worker can see assigned workplace
+- Worker TITO fails outside radius and passes inside radius
+- TITO logs record GPS + distance + gpsVerified
+
+Proceed to implement now and print the key files/changes or a clear file-by-file summary after.

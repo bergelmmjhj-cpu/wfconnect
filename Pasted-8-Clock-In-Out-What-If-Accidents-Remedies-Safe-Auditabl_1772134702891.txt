@@ -1,0 +1,65 @@
+8) Clock-In/Out “What-If” Accidents + Remedies (Safe, Auditable)
+
+Design goal:
+Prevent common user mistakes (mis-taps, wrong shift, forgot to clock out) while keeping the system tamper-resistant and audit-friendly.
+
+A) Double-tap / accidental clock-in
+- If a user taps clock-in twice:
+  - Do NOT create a second record.
+  - Return the existing open log (idempotent) and show message:
+    “You’re already clocked in.”
+
+Implementation:
+- Server: enforce unique open session per user.
+- Client: disable the clock-in button while request is in flight + 2s debounce.
+
+B) Accidental immediate clock-out
+- If clock-out happens within 60 seconds, reject with:
+  “Minimum shift duration is 1 minute.”
+- Also display a UI hint:
+  “If this was a mistake, do nothing — you’re still clocked in.”
+
+C) Wrong shift selected / wrong duty window
+- If the worker attempts clock-in outside the allowed shift window:
+  - Reject with the existing shift-window error.
+  - UI must show:
+    - Scheduled shift time (start/end)
+    - The allowed clock-in range (with grace)
+    - A CTA: “View my shifts” (links back to shift details)
+
+D) Forgot to clock out (most common)
+- Allow “Request correction” flow:
+  - Worker can submit a correction request for missing clock-out (select reason + optional note).
+  - HR/Admin can approve and set a corrected clock-out time.
+  - Every correction creates an audit record with:
+    requesterId, approverId, originalValues, newValues, reason, timestamp
+
+E) Clocked in but needs to cancel (true mistake)
+- Provide “Cancel clock-in” ONLY within a short safe window:
+  - e.g., within 2 minutes of clock-in AND no work events recorded AND location verified.
+  - This does NOT delete the log: it marks it as CANCELED with reason “Accidental clock-in”.
+  - Canceled logs are excluded from payroll but remain visible in audit/admin.
+
+F) Network/offline issues
+- If the client can’t reach server:
+  - Do NOT create local-only clock-ins that later “sync” as real time (causes disputes).
+  - Instead show: “No connection — unable to clock in. Try again.”
+- If request times out:
+  - Client must re-check status by calling /api/tito/my-logs (or a dedicated “current status” endpoint) before allowing retry to prevent duplicates.
+
+G) Location/GPS permission denied
+- If GPS is required:
+  - Show clear prompt: “Enable location to clock in.”
+  - Provide a retry after permission grant.
+  - Do not allow bypass.
+
+H) Abuse prevention + audit
+- Any edit to clock-in/out times must be:
+  - Admin/HR only OR via a worker “Request correction” workflow.
+  - Logged with before/after + who approved.
+- Rate limit repeated clock-in/out attempts (e.g., max 10/min) to reduce spam.
+
+Deliverables:
+- Implement server rules + audit schema/table (if missing).
+- Add mobile UI for: “Request correction” and “Cancel clock-in” (time-limited).
+- Add to TitoCard an “Adjusted” badge when times were corrected/canceled.

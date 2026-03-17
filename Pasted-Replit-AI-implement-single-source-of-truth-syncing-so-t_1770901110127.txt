@@ -1,0 +1,75 @@
+Replit AI — implement “single source of truth” syncing so the Workforce Connect app is ALWAYS in sync across Web (app.wfconnect.org) and Mobile (iOS/Android), and make the whole workflow as automated as possible.
+
+GOALS
+1) Web + Mobile must read/write the exact same production data (no environment drift).
+2) All state-changing actions (assign worker, delete worker, update agreement/onboarding, etc.) must immediately reflect across devices.
+3) Automate the refresh/sync so users never need to force close, hard refresh, or manually reload.
+
+BACKEND (Single Source of Truth + Real-time)
+A) Enforce ONE production API base URL for all clients
+- Create a single config source (e.g., env var PUBLIC_API_BASE_URL) used by:
+  - Expo native builds
+  - Expo web build served at app.wfconnect.org
+- Remove any hardcoded localhost/Replit URLs from client code.
+- Add a runtime “/health” endpoint returning env, version, and db identifier so we can confirm both clients hit the same backend/db.
+
+B) Real-time sync via WebSockets (recommended) or SSE
+- Add a WebSocket server (socket.io or ws).
+- Emit events on any write operation:
+  - worker.updated / worker.deleted
+  - agreement.updated
+  - onboarding.updated
+  - assignment.created / assignment.deleted
+  - workplace.updated
+- Payload includes: entity type, id, changed fields, updatedAt.
+
+C) Make writes atomic + consistent
+- Ensure all write endpoints update updatedAt timestamps.
+- Return the updated record in API responses.
+- Add server-side validation and consistent error messages.
+
+CLIENT (Automatic sync + no stale UI)
+D) Centralize networking and caching
+- Use one api client (apiRequest/base44 client) for ALL requests on all platforms.
+- Use React Query everywhere for server state:
+  - queries with stable keys (e.g., ['workers', workplaceId])
+  - mutations invalidate relevant queries on success
+  - show user-visible error UI on failure (toast/modal)
+
+E) Live updates
+- Connect to WebSocket on app start after auth.
+- On receiving events, do one of:
+  - queryClient.invalidateQueries(affectedKey)
+  - OR queryClient.setQueryData for targeted updates
+- Ensure this works on both web + mobile.
+
+F) Auto-refresh on focus / resume
+- On web: refetch on window focus + network reconnect
+- On mobile: refetch on AppState “active”
+- Set sensible staleTime/cacheTime so the UI stays fresh without spamming.
+
+G) Offline / reconnect safety (minimal)
+- Detect offline state; queue mutations if needed (optional)
+- On reconnect, refetch critical queries and rejoin socket room(s)
+
+AUTOMATION / DX
+H) Versioning + cache busting
+- Embed app version + git commit hash into both client and server responses (e.g., /health).
+- Ensure web build served on app.wfconnect.org has proper cache headers so new deploys take effect.
+- Add an in-app “Diagnostics” screen that shows:
+  - API base URL
+  - server version/commit
+  - db identifier
+  - socket connected state
+  - last sync time
+
+ACCEPTANCE CRITERIA
+1) Assigning a worker on web appears on the phone within 1–3 seconds without manual refresh.
+2) Deleting/updating a worker on mobile reflects on web the same way.
+3) Both web and mobile show identical counts and records when hitting the same workplace.
+4) Diagnostics proves both clients use the same API base URL and same db identifier.
+
+DELIVERABLES
+- Code changes (backend + client)
+- Short summary of files changed and how to test
+- A test plan: “open web + phone side-by-side, perform actions, observe live sync”

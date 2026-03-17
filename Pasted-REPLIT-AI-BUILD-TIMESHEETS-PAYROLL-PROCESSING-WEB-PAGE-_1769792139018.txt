@@ -1,0 +1,197 @@
+REPLIT AI — BUILD “TIMESHEETS → PAYROLL PROCESSING” WEB PAGE USING THE 2026 PERIOD GUIDE
+
+Context:
+We have a bi-weekly payroll period guide (Period 1–26 for 2026) with specific cutoff date ranges. We need a web page where Admin (and optionally HR) can review “Submitted Timesheets” and process them into Payroll batches by period.
+
+Goal:
+Create a new ADMIN/HR management page to:
+1) View submitted timesheets filtered by a selected payroll period (from the period guide)
+2) Review/approve/dispute/edit (if allowed) timesheet entries
+3) Generate a payroll batch for that period and “process” it (mark as processed + export)
+
+IMPORTANT:
+- This is for the WEB APP (desktop-friendly), not mobile.
+- Must be role-gated: Admin can do everything; HR can view + prepare but only Admin can finalize payroll (or implement Admin-only finalize if simplest).
+
+====================================================
+1) PERIOD GUIDE DATA (2026)
+====================================================
+Implement the 2026 periods exactly as follows (hardcode for now, but keep it in a single config file so we can extend later):
+
+Period 1:  Dec 27 – Jan 9
+Period 2:  Jan 10 – Jan 23
+Period 3:  Jan 24 – Feb 6
+Period 4:  Feb 7 – Feb 20
+Period 5:  Feb 21 – Mar 6
+Period 6:  Mar 7 – Mar 20
+Period 7:  Mar 21 – Apr 3
+Period 8:  Apr 4 – Apr 17
+Period 9:  Apr 18 – May 1
+Period 10: May 2 – May 15
+Period 11: May 16 – May 29
+Period 12: May 30 – Jun 12
+Period 13: Jun 13 – Jun 26
+Period 14: Jun 27 – Jul 10
+Period 15: Jul 11 – Jul 24
+Period 16: Jul 25 – Aug 7
+Period 17: Aug 8 – Aug 21
+Period 18: Aug 22 – Sep 4
+Period 19: Sep 5 – Sep 18
+Period 20: Sep 19 – Oct 2
+Period 21: Oct 3 – Oct 16
+Period 22: Oct 17 – Oct 30
+Period 23: Oct 31 – Nov 13
+Period 24: Nov 17 – Nov 27
+Period 25: Nov 28 – Dec 11
+Period 26: Dec 12 – Dec 25
+
+Rules:
+- Store timestamps in UTC. The “cutoff dates” should be treated as LOCAL DATE ranges (Canada). For simplicity, interpret them as inclusive start/end in the system timezone, but store UTC in DB.
+- The UI should display the date range for the selected period.
+
+====================================================
+2) DATA MODEL (PRISMA)
+====================================================
+If Timesheets already exist, extend them. If not, create minimal models:
+
+A) Timesheet
+- id
+- workerUserId (FK User)
+- periodYear Int (e.g., 2026)
+- periodNumber Int (1–26)
+- status enum: DRAFT | SUBMITTED | APPROVED | DISPUTED | PROCESSED
+- submittedAt DateTime?
+- approvedByUserId String?
+- approvedAt DateTime?
+- disputedByUserId String?
+- disputedAt DateTime?
+- disputeReason String?
+- totalHours Decimal(5,2) (optional computed)
+- totalPay Decimal(10,2) (optional computed)
+- createdAt, updatedAt
+
+B) TimesheetEntry (line items)
+- id
+- timesheetId (FK)
+- shiftId or workplaceId (optional)
+- dateLocal (Date)  // store the “work date” as a date
+- timeInUtc DateTime
+- timeOutUtc DateTime
+- breakMinutes Int @default(0)
+- hours Decimal(5,2)
+- payRate Decimal(10,2)  // snapshot rate
+- amount Decimal(10,2)   // hours * payRate
+- notes String?
+- createdAt, updatedAt
+
+C) PayrollBatch
+- id
+- periodYear Int
+- periodNumber Int
+- status enum: OPEN | FINALIZED | EXPORTED
+- createdByUserId
+- finalizedByUserId?
+- finalizedAt?
+- totalWorkers Int
+- totalHours Decimal(10,2)
+- totalAmount Decimal(12,2)
+- createdAt, updatedAt
+Unique: (periodYear, periodNumber)
+
+D) PayrollBatchItem
+- id
+- payrollBatchId (FK)
+- workerUserId (FK)
+- timesheetId (FK)
+- status enum: INCLUDED | EXCLUDED
+- hours Decimal(10,2)
+- amount Decimal(12,2)
+- createdAt, updatedAt
+
+====================================================
+3) BACKEND API (EXPRESS) — RBAC ENFORCED
+====================================================
+Create endpoints:
+
+Periods:
+- GET /api/payroll/periods?year=2026
+  Returns array of { year, periodNumber, startDate, endDate }
+
+Timesheets:
+- GET /api/timesheets?year=2026&period=10&status=SUBMITTED
+- GET /api/timesheets/:id (with entries)
+- PATCH /api/timesheets/:id/approve   (HR/Admin)
+- PATCH /api/timesheets/:id/dispute   (HR/Admin) body { reason }
+- PATCH /api/timesheets/:id/update-entry (Admin only, optional)
+- NOTE: Do not allow processing if status != APPROVED (unless Admin override)
+
+Payroll processing:
+- POST /api/payroll/batches
+  body { year, periodNumber }
+  Creates or returns existing OPEN batch and auto-includes all APPROVED timesheets for that period.
+- GET /api/payroll/batches?year=2026&period=10
+- GET /api/payroll/batches/:id (items + totals)
+- PATCH /api/payroll/batches/:id/finalize (Admin only)
+  Marks batch FINALIZED and marks included timesheets as PROCESSED.
+- GET /api/payroll/batches/:id/export.csv (Admin only)
+  Exports CSV: Worker Name, Worker Email, Hours, Rate (if uniform or per-entry), Amount, Period, Date Range
+
+====================================================
+4) WEB UI PAGE (REACT)
+====================================================
+Create a new Admin/HR page:
+Route: /admin/timesheets (or /management/timesheets)
+Nav label: “Timesheets”
+
+Layout:
+Left: Period selector (Year dropdown + Period dropdown showing “Period 10 (May 2–May 15)”)
+Main: Table of submitted/approved timesheets for that period
+
+Table columns:
+- Worker (name + email)
+- Status (pill)
+- Submitted At
+- Total Hours
+- Total Amount
+- Actions: View / Approve / Dispute
+
+Timesheet detail drawer/modal:
+- List entries with date, time-in/out, break, hours, rate, amount
+- Admin can optionally edit break minutes/notes (if implementing)
+- Approve/Dispute buttons
+
+Payroll panel for the selected period:
+- Button: “Create Payroll Batch”
+- Shows batch status and totals
+- Button (Admin only): “Finalize Payroll”
+- Button (Admin only): “Export CSV”
+
+User experience rules:
+- Only show “Finalize” when all included timesheets are APPROVED and batch is OPEN.
+- Clearly warn: “Finalizing will mark timesheets as processed.”
+
+====================================================
+5) SEED / DEMO DATA
+====================================================
+Add demo data for 2026:
+- 2–3 workers with SUBMITTED timesheets for a chosen period (e.g., Period 2)
+- Include 2–5 entries each
+
+====================================================
+6) PRINT IN FULL AFTER IMPLEMENTATION
+====================================================
+Print the full content of:
+- server/prisma/schema.prisma
+- server/src/routes/timesheets.ts (or equivalent)
+- server/src/routes/payroll.ts (or equivalent)
+- client/src/pages/AdminTimesheetsPage.tsx (or equivalent)
+- client/src/components/TimesheetDetailModal.tsx (or equivalent)
+- client/src/api/timesheets.ts and client/src/api/payroll.ts (or equivalents)
+- the period config file (e.g., server/src/config/payPeriods2026.ts)
+
+Acceptance Criteria:
+- Admin can select a period and see submitted timesheets
+- Admin/HR can approve/dispute timesheets
+- Admin can generate a payroll batch for the selected period
+- Admin can finalize payroll and export a CSV
+- Period ranges match the provided 2026 guide exactly

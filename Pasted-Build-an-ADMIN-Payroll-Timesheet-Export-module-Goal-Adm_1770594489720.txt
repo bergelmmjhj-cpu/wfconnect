@@ -1,0 +1,142 @@
+Build an ADMIN “Payroll / Timesheet Export” module.
+
+Goal
+Admins must be able to download bi-weekly timesheets for payroll, grouped by HOTEL, with payment details ready (eTransfer email + void cheque/banking details). Exports must be separated per hotel and per bi-weekly cutoff period, listing the workers who worked at that hotel during that cutoff.
+
+Core Requirements
+1) Access Control
+- Only users with role = "admin" can access Payroll / Timesheet Export pages and downloads.
+- Block all non-admin access (frontend + backend authorization).
+
+2) UI (Admin)
+Create a new Admin page: /admin/payroll
+Controls:
+- Year selector (default current year; must support 2026)
+- Cutoff Period selector (1–26)
+- Hotel selector (dropdown + search)
+- Optional: “All Hotels” checkbox (generates a zip with one file per hotel)
+- Optional filters: worker status (active/inactive), include/exclude cancelled shifts
+
+Results:
+- Show a table grouped by hotel:
+  - Worker Name
+  - Worker ID
+  - Dates worked in the cutoff
+  - Total hours (or total shifts if hours not tracked)
+  - Rate (if available)
+  - Gross pay estimate (if rate exists) = hours * rate
+  - Payment method: eTransfer
+  - eTransfer email
+  - Void cheque / banking details (mask in UI; full only in exported file if admin confirms)
+  - Notes (optional)
+
+Buttons:
+- “Download Timesheet (CSV)”
+- “Download Timesheet (XLSX)”
+- “Download Payment Summary (CSV/XLSX)” (hotel-level totals + worker payout totals)
+- “Download All Hotels (ZIP)” if All Hotels is selected
+
+3) Export Behavior
+- Exports are per: (Year, Cutoff Period, Hotel)
+- File naming:
+  - WorkforceConnect_Timesheet_2026_Period-05_HotelName.csv
+  - WorkforceConnect_PaymentSummary_2026_Period-05_HotelName.xlsx
+- Payment Summary must include:
+  - Hotel name
+  - Cutoff date range
+  - Worker name/id
+  - Total hours/shifts
+  - Total pay (if rate exists; otherwise leave blank)
+  - eTransfer email
+  - Banking/void cheque reference id or details
+  - Admin generated date/time
+
+4) Data Requirements / Assumptions
+If your current schema differs, implement minimal changes/migrations.
+
+Entities (recommended):
+- hotels: id, name, address, isActive
+- workers: id, fullName, phone, email, isActive
+- assignments/shifts/work_logs: id, workerId, hotelId, shiftDate (or start/end), hoursWorked (nullable), status (completed/cancelled)
+- payment_profiles: id, workerId, etransferEmail, voidChequeFileId OR bankInstitution, transit, accountNumber (encrypted at rest), updatedAt
+
+Rules:
+- A worker appears in a hotel export if they have at least one COMPLETED work_log within that cutoff date range for that hotel.
+- Total hours = sum(hoursWorked). If hoursWorked is null, count shifts and show totalShifts instead.
+- If rates exist in your system (worker rate or hotel rate), compute gross pay; otherwise leave pay columns blank but still export payment details.
+
+5) Security / Compliance
+- Mask sensitive banking data in UI (e.g., show last 2–4 digits only).
+- Exports should include full details only for admin downloads.
+- Ensure server-side logging/auditing:
+  - who downloaded
+  - timestamp
+  - cutoff period
+  - hotel(s)
+  - file type
+
+6) Backend API
+Create endpoints (examples):
+- GET /api/admin/payroll/cutoffs?year=2026 -> returns list of periods with start/end dates
+- GET /api/admin/payroll/hotels -> list hotels
+- GET /api/admin/payroll/preview?year=2026&period=5&hotelId=123 -> returns grouped worker rows + totals
+- GET /api/admin/payroll/export?year=2026&period=5&hotelId=123&format=csv|xlsx&type=timesheet|paymentSummary -> streams file download
+- POST /api/admin/payroll/export/all (optional) -> returns a ZIP for all hotels
+
+7) Cutoff Periods (Use EXACTLY these for 2026)
+Implement a “cutoff calendar” for 2026 with these ranges (inclusive):
+Period 1:  Dec 27 – Jan 9
+Period 2:  Jan 10 – Jan 23
+Period 3:  Jan 24 – Feb 6
+Period 4:  Feb 7 – Feb 20
+Period 5:  Feb 21 – Mar 6
+Period 6:  Mar 7 – Mar 20
+Period 7:  Mar 21 – Apr 3
+Period 8:  Apr 4 – Apr 17
+Period 9:  Apr 18 – May 1
+Period 10: May 2 – May 15
+Period 11: May 16 – May 29
+Period 12: May 30 – Jun 12
+Period 13: Jun 13 – Jun 26
+Period 14: Jun 27 – Jul 10
+Period 15: Jul 11 – Jul 24
+Period 16: Jul 25 – Aug 7
+Period 17: Aug 8 – Aug 21
+Period 18: Aug 22 – Sep 4
+Period 19: Sep 5 – Sep 18
+Period 20: Sep 19 – Oct 2
+Period 21: Oct 3 – Oct 16
+Period 22: Oct 17 – Oct 30
+Period 23: Oct 31 – Nov 13
+Period 24: Nov 17 – Nov 27
+Period 25: Nov 28 – Dec 11
+Period 26: Dec 12 – Dec 25
+
+Notes:
+- Period 1 spans 2025->2026 (Dec 27–31 is 2025, Jan 1–9 is 2026). Still treat it as “2026 Period 1”.
+- Use timezone America/Toronto for cutoff boundaries.
+
+8) Output Formatting
+Timesheet export columns (minimum):
+- Hotel
+- CutoffPeriod
+- CutoffStart
+- CutoffEnd
+- WorkerName
+- WorkerId
+- DatesWorked (comma-separated or separate rows per date)
+- HoursWorked (sum)
+- ShiftsWorked (count)
+- Rate (optional)
+- GrossPay (optional)
+- EtransferEmail
+- VoidChequeOrBankRef (or masked in UI; full in export)
+- GeneratedAt
+
+Deliverables
+- Admin UI page + routing
+- Backend endpoints with auth checks
+- Any schema migrations needed
+- CSV/XLSX generation (use a reliable library)
+- Optional ZIP generation for all hotels
+- Basic tests for cutoff mapping + export output

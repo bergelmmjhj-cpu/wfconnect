@@ -1,0 +1,285 @@
+Build “Clawd AI” for WFConnect as a true multi-agent business intelligence and operations system, not just a single chatbot.
+
+Core vision:
+Clawd AI must function like an intelligent right hand for the business. It should understand patterns, monitor operations, detect irregularities, delegate work internally across specialized AI assistants, and provide clear recommendations and actions for HR/Admin users.
+
+High-level architecture:
+Create 1 main assistant and at least 5 specialized sub-assistants.
+
+The main assistant should act as the executive orchestrator:
+- understands the full business context
+- receives user questions or system events
+- decides which sub-assistant(s) should handle each task
+- combines outputs into one final answer
+- tracks priorities, risks, and recommended actions
+- behaves like a reliable right hand for management
+
+Important:
+Do not build this as fake “personas” only. Build real assistant modules/services with clear responsibilities, structured inputs/outputs, and orchestration logic.
+
+Assistants to build:
+
+1. Main Assistant: Clawd Executive
+Purpose:
+- central orchestrator and business copilot
+- delegates requests to specialized assistants
+- combines findings into one final response
+- maintains business-wide situational awareness
+- prioritizes issues by urgency, impact, and confidence
+
+Responsibilities:
+- interpret admin/hr requests
+- route tasks to one or more assistants
+- summarize cross-functional insights
+- deliver action-oriented outputs
+- provide daily, weekly, and urgent operational briefings
+
+2. Staffing Intelligence Assistant
+Purpose:
+- understand staffing patterns and scheduling health
+
+Responsibilities:
+- detect unfilled shifts
+- identify overused workers
+- detect scheduling conflicts
+- analyze fill-rate trends
+- identify sites with repeated staffing problems
+- find worker assignment inefficiencies
+- suggest better worker allocation
+
+3. Attendance and Reliability Assistant
+Purpose:
+- monitor worker reliability and attendance patterns
+
+Responsibilities:
+- detect repeat no-shows
+- detect repeat lateness
+- detect acceptance-then-cancellation patterns
+- identify worker reliability decline over time
+- flag risk by worker, site, role, and shift type
+- suggest intervention actions
+
+4. Recruitment Pipeline Assistant
+Purpose:
+- understand applicant funnel performance and hiring bottlenecks
+
+Responsibilities:
+- detect stalled applicants
+- identify slow stages in pipeline
+- find accounts or roles with chronic shortages
+- detect recruiter backlog
+- analyze conversion rates by stage
+- recommend follow-up priorities
+
+5. Payroll and Hours Integrity Assistant
+Purpose:
+- detect hours, timesheet, and payroll-related irregularities
+
+Responsibilities:
+- compare scheduled vs worked hours
+- detect missing timesheets
+- flag overtime risk
+- detect suspicious repeated patterns in hours
+- identify duplicate or inconsistent entries
+- summarize payroll-related operational risks
+
+6. Client and Site Risk Assistant
+Purpose:
+- understand site/account-level business health
+
+Responsibilities:
+- detect high-risk client accounts
+- identify unstable sites with repeated cancellations, no-shows, or complaints
+- monitor service reliability trends
+- surface locations likely to need intervention
+- recommend escalation priorities
+
+7. Communication and Insight Assistant
+Purpose:
+- turn raw alerts and metrics into readable business intelligence
+
+Responsibilities:
+- generate daily briefings
+- generate weekly summaries
+- summarize important operational changes
+- explain trends in simple business language
+- present “what changed, why it matters, what to do next”
+
+Main orchestration behavior:
+The Clawd Executive assistant must:
+- classify each incoming request
+- decide whether one or multiple assistants are needed
+- send structured context to selected assistants
+- collect and merge their outputs
+- resolve contradictions if they disagree
+- present one final decision-ready response
+
+Examples:
+- “What should I worry about today?”
+  -> delegate to Staffing, Attendance, Client Risk, Communication
+- “Why is Manitou becoming unstable?”
+  -> delegate to Staffing, Attendance, Client Risk
+- “Where are we losing applicants?”
+  -> delegate to Recruitment + Communication
+- “Which workers are highest reliability risk this week?”
+  -> delegate to Attendance + Staffing
+- “Give me the executive summary for operations today”
+  -> delegate to all major assistants, then Communication summarizes
+
+Business intelligence requirement:
+Clawd AI must understand patterns of the business over time, not only current records.
+
+This means the system should:
+- analyze rolling 7-day, 14-day, 30-day, and monthly trends
+- compare current period vs previous period
+- detect repeated patterns, not just one-off incidents
+- identify worsening vs improving conditions
+- assign risk levels using evidence
+- explain why a pattern matters operationally
+
+Examples of pattern intelligence:
+- repeated no-shows concentrated in one site
+- one recruiter accumulating stalled applicants
+- one worker pool being overused for urgent shifts
+- growing mismatch between scheduled and worked hours
+- increasing cancellation rate for a specific account
+- specific shift times having chronic fill problems
+
+Important design rule:
+Pattern detection must be based on deterministic backend analysis first.
+Do not rely only on the language model to “notice” patterns from raw text.
+
+Use this architecture:
+database queries -> rule engine / analytics engine -> structured findings -> assistant reasoning layer -> final response
+
+Implementation requirements:
+
+1. Shared operational memory/context layer
+Create a shared context service that gives all assistants access to:
+- shifts
+- workers
+- attendance records
+- applicant pipeline
+- timesheets/payroll-related records
+- site/account metrics
+- alert history
+- recent summaries
+- trend snapshots
+
+This is not long-term AI memory in the vague sense.
+This should be a real application layer that prepares structured data context for assistants.
+
+2. Detection and analytics engine
+Create backend services that compute:
+- staffing metrics
+- attendance metrics
+- applicant funnel metrics
+- hours/payroll integrity metrics
+- site risk metrics
+- trend deltas over time
+
+The assistants should consume these computed metrics and alerts, not raw uncontrolled data dumps.
+
+3. Delegation/orchestration engine
+Create a router/orchestrator that:
+- maps request types to assistants
+- supports single-assistant and multi-assistant workflows
+- passes structured input payloads
+- receives structured outputs
+- combines them into one answer
+- supports confidence scoring and severity scoring
+
+4. Structured assistant contracts
+Each assistant must return structured output like:
+- summary
+- key_findings[]
+- risks[]
+- supporting_evidence[]
+- recommended_actions[]
+- confidence_score
+- severity_score
+
+The main assistant then merges these into a single final output.
+
+5. Dashboard + assistant workspace
+Build an AI workspace for admin/hr only with:
+- main Clawd Executive chat
+- specialized assistant cards/tabs
+- daily briefing section
+- active alerts section
+- business risk summary
+- quick prompts
+- assistant-specific drilldowns
+
+6. Permissions
+Only admin and hr roles can access Clawd AI and all assistant outputs.
+Workers and clients must never access these assistants.
+
+7. Auditability
+Log:
+- which assistant was called
+- what data domain it used
+- what findings were returned
+- who viewed the output
+- when an alert was acknowledged or resolved
+
+8. Replit-friendly implementation
+Because this is in Replit:
+- keep detection logic in backend code/services
+- keep assistants modular
+- use scheduled jobs for recurring analyses
+- use Claude/Replit AI for reasoning, summaries, and recommendations
+- avoid expensive raw-model scans of the entire database on every request
+
+9. Quality standards
+- production-safe
+- modular and extensible
+- no fake demo logic
+- no hardcoded sample outputs
+- real data only
+- explainable outputs
+- no unsupported claims
+- easy to add future assistants later
+
+Initial specialized assistant outputs should feel like this:
+
+Staffing Intelligence:
+- “3 urgent shifts in the next 12 hours remain unfilled. Two are at Manitou. Fill rate there has dropped 18% compared with the prior 14-day period. Recommended action: prioritize nearby workers and escalate site risk.”
+
+Attendance and Reliability:
+- “Worker X has 3 late arrivals and 2 short-notice cancellations in 14 days. Pattern suggests rising reliability risk. Recommended action: reduce critical assignments and review reasons.”
+
+Recruitment Pipeline:
+- “12 applicants are stalled over 5 days in the screening stage. Most belong to housekeeping roles. This is likely contributing to fill delays for weekend demand.”
+
+Payroll and Hours Integrity:
+- “7 shifts show material mismatch between scheduled and worked hours. 2 workers are approaching overtime threshold this week.”
+
+Client and Site Risk:
+- “Manitou is the highest-risk site this week due to repeated cancellations, lower fill rate, and multiple urgent open shifts.”
+
+Communication and Insight:
+- “Today’s main operational risk is staffing instability at Manitou, driven by cancellations and slow fill velocity. Secondary concern is applicant pipeline stagnation for housekeeping roles.”
+
+Deliverables:
+Provide complete implementation for:
+- database schema changes if needed
+- assistant module architecture
+- orchestration/router service
+- detection/analytics services
+- scheduled jobs
+- API endpoints
+- frontend AI workspace
+- permissions
+- logging/audit trail
+- reusable structured assistant contracts
+- notes on where each part lives in the Replit project
+
+Also:
+Design the code so more assistants can be added later, such as:
+- Compliance Assistant
+- Finance Assistant
+- Worker Sentiment Assistant
+- Client Retention Assistant
+
+Start by inspecting the current WFConnect project and existing AI assistant implementation, then extend it into this multi-assistant architecture without breaking existing functionality.

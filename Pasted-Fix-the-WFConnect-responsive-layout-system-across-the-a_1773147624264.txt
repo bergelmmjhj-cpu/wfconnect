@@ -1,0 +1,70 @@
+Fix the WFConnect responsive layout system across the app, starting with the Settings screen shown here.
+
+Problem:
+The app is mobile-first, but when viewed in a web browser, major UI elements still stretch almost the full width of the screen. This makes the app look broken and not professionally adapted for web access. The latest example is the Settings page, where the list rows, danger zone section, and especially the red “Sign Out” button still span almost end-to-end across the page.
+
+This is not acceptable. I do not want oversized edge-to-edge controls on web/desktop layouts.
+
+What I want fixed:
+1. Fix the entire responsive layout behavior across the app, not just one screen.
+2. Keep the mobile experience optimized for phones.
+3. On tablet and desktop/web:
+   - constrain content width
+   - center the main content area properly
+   - prevent buttons, cards, rows, and sections from stretching across the whole browser width
+   - add proper horizontal margins/padding and balanced whitespace
+4. The Settings screen must be corrected immediately:
+   - profile header section
+   - security section
+   - settings list rows
+   - danger zone card
+   - sign out button
+5. The “Sign Out” button must not span nearly the full page width on web.
+6. Settings rows should sit inside a proper centered content container with max width.
+7. The danger zone should also follow the same responsive container width.
+8. Make the UI look intentional on web, not like a blown-up mobile screen.
+
+Required design behavior:
+- Mobile:
+  - maintain mobile-first usability
+  - appropriate spacing
+  - components can be wide within the phone layout
+- Tablet/Desktop/Web:
+  - centered content container
+  - sensible max-width
+  - visually clean layout
+  - no uncontrolled full-width stretching
+  - spacing should feel like a proper web app
+
+Technical requirements:
+1. Audit the shared layout wrappers and screen containers.
+2. Identify why content is inheriting full-width behavior on web.
+3. Fix any components using uncontrolled full width behavior such as:
+   - width: 100%
+   - width: 100vw
+   - flex/stretch rules without max-width constraints
+   - parent containers that do not cap content width
+4. Add a reusable responsive page container pattern for all major app screens.
+5. Ensure buttons size relative to the content container, not the browser viewport.
+6. Apply the same responsive strategy across:
+   - login/auth screens
+   - settings
+   - dashboard
+   - management
+   - requests
+   - other major screens that currently look stretched on web
+7. If this is React Native Web or a shared mobile/web codebase, implement the correct platform-aware responsive wrapper so web layouts are constrained while mobile remains natural.
+8. Preserve current functionality and navigation while fixing layout.
+
+Deliverables:
+1. Fix the Settings page layout fully.
+2. Fix the shared responsive layout system across the app.
+3. Show exactly which files were changed.
+4. Explain the root cause of the stretching issue.
+5. Confirm the result was checked on:
+   - phone
+   - tablet
+   - desktop browser
+6. Proactively fix similar layout issues elsewhere in the app instead of waiting for me to report each one.
+
+Do not give me a narrow one-screen patch. I want a proper responsive web layout correction across the entire app.

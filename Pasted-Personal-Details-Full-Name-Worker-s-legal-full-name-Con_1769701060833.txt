@@ -1,0 +1,55 @@
+Personal Details:
+
+Full Name: Worker's legal full name.
+Contact Information: Phone number, email address.
+Residential Address: Street address, city, province, postal code (likely linked to the WorkerProfile entity fields: phone_number, address, city, province, postal_code, gps_coordinates, formatted_address).
+Date of Birth: For age verification and legal employment requirements.
+Work Eligibility:
+
+Right to Work Status: Confirmation of legal eligibility to work in the relevant jurisdiction (e.g., Canadian citizen, permanent resident, valid work permit holder).
+Social Insurance Number (SIN) / Tax ID: Collected post-hire, but acknowledgement of requirement during application.
+Background Check Consent: Agreement for the company to conduct necessary background checks.
+Role Interests:
+
+Preferred Job Roles: Selection from a predefined list of roles (e.g., Housekeeper, Server, Cook, General Labor, as defined in TodoItem.assigned_workers.worker_role). An "Other" option with a free-text field for roles not listed.
+Availability:
+
+General Availability: Days of the week and preferred time blocks (e.g., mornings, afternoons, evenings) the worker is generally available.
+Specific Dates/Periods of Unavailability: Any known periods the worker cannot work.
+Experience:
+
+Relevant Work History: Previous job titles, company names, dates of employment, and a brief description of duties for each role.
+Years of Experience: Overall or per role (potentially stored in WorkerSkill.years_of_experience).
+Skills:
+
+Skill Set: List of specific skills relevant to the job roles (e.g., equipment operation, software proficiency, language fluency, safety certifications). These would directly map to the WorkerSkill entity (skill_name, skill_category, proficiency_level).
+Certifications/Licenses: Any relevant certifications or licenses, including expiry dates (e.g., WorkerSkill.certification_number, WorkerSkill.expiry_date).
+Self-Certification: Workers declare their skills, which may require later admin verification (WorkerSkill.self_certified, WorkerSkill.admin_verified).
+Shift Preferences:
+
+Shift Type Preference: Day shifts, night shifts, weekdays, weekends.
+Desired Shift Length: E.g., 4-hour, 8-hour.
+Travel Willingness: How far the worker is willing to travel for shifts.
+Emergency Contacts:
+
+Name: Full name of emergency contact.
+Relationship: Relationship to the worker.
+Phone Number: Contact number for emergencies (stored in WorkerProfile.emergency_contact_name, WorkerProfile.emergency_contact_phone).
+Documentation Uploads:
+
+Resume/CV: Upload of the worker's resume.
+Work Permits/Visas: If applicable, proof of right to work.
+Certificates/Licenses: Scanned copies of relevant qualifications.
+Void Cheque/Banking Information: Explicitly stated that this is collected post-hire, but the form confirms understanding of this requirement (eventual WorkerProfile.banking_details).
+(All document URLs would be stored in WorkerProfile.document_urls).
+Acknowledgments and Consents:
+
+TITO Accuracy: Acknowledgment of the Time-In/Time-Out (TITO) system and the importance of accurate clocking in/out, including GPS validation (WorkerProfile.reminder_preference and general understanding of TITO system parameters like ShiftRequest.geofence_radius_meters).
+Site Rules: Agreement to adhere to client site-specific rules and regulations.
+Worker Agreement: Consent to the terms and conditions of the general worker agreement (likely refers to WorkerProfile.subcontractor_agreement_signed, WorkerProfile.agreement_signed_date, WorkerProfile.subcontractor_agreement_uri).
+Privacy Consents: Agreement to the company's privacy policy, outlining how personal data is collected, used, and protected, in compliance with GDPR and PIPEDA.
+Marketing/Communication Consent: Optional consent for receiving promotional communications.
+Electronic Signature:
+
+A secure electronic signature mechanism (WorkerDocumentStatus.signature_data) to formally acknowledge and agree to all terms, conditions, and information provided in the application. This ensures legal enforceability of the worker agreement.
+This detailed form ensures that all critical worker data is captured upfront, streamlining the onboarding process and providing HR with a comprehensive profile for each applicant. Some fields, like banking details, are explicitly deferred to the post-hire stage to maintain privacy during the initial application phase.

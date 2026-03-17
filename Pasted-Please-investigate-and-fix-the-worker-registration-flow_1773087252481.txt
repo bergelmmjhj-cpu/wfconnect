@@ -1,0 +1,59 @@
+Please investigate and fix the worker registration flow in WFConnect.
+
+Current visible issues from the Create Account screen:
+
+1. Google sign-up is not working
+- The page shows a red error banner: “Google sign-up failed. Please try again.”
+- The Google button is visible on the Create Account page, but the flow is failing.
+- Diagnose the exact failure point for Google OAuth sign-up on the registration page.
+- Check frontend Google auth trigger, redirect/callback handling, Supabase/Auth config, allowed redirect URLs, provider enablement, and backend user creation logic.
+- Make the Google sign-up flow fully functional end-to-end.
+
+2. Pending registration is not appearing for admin review
+- A user signed in with Google and was supposedly sent for admin review.
+- However, the admin cannot see the registration in the pending approval / user management area.
+- Investigate whether the Google-authenticated user record is actually being created in the database.
+- Verify whether the account is being saved as inactive/pending and whether the admin panel query includes those records.
+- Fix the approval pipeline so newly registered Google users reliably appear in Pending Approval.
+
+3. Form and data mapping issues visible on the screen
+- The “Full Name” field currently contains an email address: `admin@wfconnect.org`
+- That suggests field mapping, autofill, or state-binding may be incorrect.
+- Investigate whether email is being mistakenly bound into the fullName field.
+- Validate all registration form bindings and submission payload structure.
+
+4. Password form inconsistency
+- Password is filled, but Email is blank in the screenshot.
+- Confirm validation logic is correct and that registration cannot proceed with invalid/incomplete data.
+- Ensure validation messages are specific and accurate.
+
+5. Role/security hardening
+- Self-sign-up must only create worker accounts.
+- Remove any ability for public users to self-register as admin, HR, or client.
+- Enforce the allowed role server-side, not just in the UI.
+
+What I need you to do:
+- Trace the full Google sign-up flow from button click to database insert.
+- Check frontend logs, network requests, auth callback behavior, and backend/database writes.
+- Confirm exactly why the Google sign-up fails.
+- Confirm exactly why pending registrations are not visible to admin.
+- Implement the fix cleanly.
+- After fixing, test these scenarios:
+  a) Email/password worker sign-up
+  b) Google worker sign-up
+  c) New registration appears under Pending Approval
+  d) Admin can review and approve
+  e) Rejected/invalid registrations do not create broken records
+
+Expected result:
+- Google sign-up works from the Create Account page
+- New Google sign-ups create a pending worker record
+- Admin can see the registration in Pending Approval
+- No public registration path can create admin/HR/client users
+- Full Name, Email, Password, and Confirm Password fields are correctly mapped and validated
+
+Please make the fixes directly in the project and summarize:
+1. root cause
+2. files changed
+3. exact fixes made
+4. how you tested them

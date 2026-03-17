@@ -1,0 +1,80 @@
+I want you to perform a full investigation of this WFConnect application before making any changes.
+
+Your task is to analyze the system and report what is missing, misconfigured, or poorly implemented.
+
+Focus on these areas:
+
+1. Authentication System
+Investigate the entire authentication flow:
+- Email/password registration
+- Google OAuth sign-in / sign-up
+- User creation and database writes
+- Pending approval workflow
+- Role assignment
+
+Questions you must answer:
+• Is Google OAuth fully configured in the project?
+• Are the correct redirect URLs configured?
+• Does the Google button actually trigger the OAuth flow correctly?
+• After Google login, is a user record created in the database?
+• If the user is created, why might it not appear in admin pending approvals?
+• Are there backend validation failures that stop registration silently?
+
+2. Registration / Sign Up Page
+Analyze the Create Account screen.
+
+Check:
+• Field bindings (Full Name, Email, Password, Confirm Password)
+• Validation logic
+• Form submission payload
+• API endpoint used to create users
+
+Tell me:
+• If any fields are incorrectly mapped
+• If the form allows invalid submissions
+• If the backend expects fields the frontend does not send
+
+3. Admin Approval Workflow
+Investigate how pending users are stored and retrieved.
+
+Explain:
+• Where pending users are stored in the database
+• What status flags determine approval
+• What query the admin dashboard uses to list pending users
+• Why a newly registered user might not appear there
+
+4. Security Audit
+Check if the system has security risks.
+
+Specifically verify:
+• Can someone self-register as admin, HR, or client?
+• Is role assignment protected server-side?
+• Are there missing validations in the API?
+
+5. Database Integrity
+Review the database schema and user creation logic.
+
+Report:
+• Required fields
+• Nullable fields
+• Any mismatch between frontend form and database schema
+• Any logic that could prevent a user record from being saved
+
+6. Error Handling
+Identify places where errors might fail silently.
+
+Tell me:
+• Where errors are swallowed instead of returned
+• Where logs should be added
+• Why the UI might show "Google sign-up failed" without a clear reason
+
+After the investigation, provide:
+
+1. Root causes of the current issues
+2. Missing configurations
+3. Architectural weaknesses
+4. Security concerns
+5. Exact files involved
+6. A recommended fix plan (do NOT implement yet)
+
+Do not change any code yet. First produce a detailed technical diagnosis of the application.

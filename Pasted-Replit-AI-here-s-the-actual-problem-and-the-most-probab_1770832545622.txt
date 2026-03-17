@@ -1,0 +1,42 @@
+Replit AI — here’s the actual problem and the most probable fix. Please investigate + implement end-to-end.
+
+PROBLEM (what we observe)
+1) Workers sign the agreement but still remain stuck at “AGREEMENT PENDING” (status doesn’t advance).
+2) Admin cannot delete users (including test users). Deletion fails from the UI.
+
+MOST PROBABLE ROOT CAUSE
+These two failures happening together strongly suggests the client requests to protected endpoints are missing required auth headers or are hitting the wrong backend/env.
+Specifically: protected routes rely on headers like:
+- x-user-id
+- x-user-role
+Some code paths (apiRequest / fetch calls) likely do NOT include these headers consistently, causing 401/403 or silent failures. UI may also be swallowing errors.
+
+WHAT TO DO (probable fix)
+A) Client: centralize auth headers
+- Update the shared request helper (apiRequest/base client) so EVERY request automatically includes:
+  - x-user-id = current user id from AuthContext
+  - x-user-role = current user role from AuthContext
+- Remove per-screen ad-hoc headers where possible; enforce one consistent client.
+
+B) Client: stop silent failures
+- In agreement signing flow: after signing, call PATCH /api/users/me/onboarding-status (or your equivalent) to set the next status.
+- If that call fails (401/403/etc), show an on-screen error and do NOT advance UI silently. Add retry (max 3).
+
+C) Client: admin delete request must include headers + show errors
+- Ensure the delete user request includes x-user-id and x-user-role.
+- If it fails, display the server error message to the admin.
+
+D) Server: improve error visibility
+- Ensure protected endpoints return clear JSON errors for missing headers (401), wrong role (403), and FK constraint failures (409/500 with details in dev).
+- Add logs for:
+  - onboarding status updates (who, new status)
+  - admin delete (adminId, targetId, result)
+
+E) Verification (must be done)
+- Add a temporary endpoint GET /api/debug/whoami that returns the headers the server sees (x-user-id/x-user-role + host/env).
+- Use it from the app/admin UI to confirm the app is hitting the correct backend and sending headers.
+
+SUCCESS CRITERIA
+- After agreement signing, the PATCH onboarding status call returns 200 and users.onboarding_status updates in DB.
+- Admin delete call returns 200 and user is removed (and dependent rows cascade or are cleaned).
+- If anything fails, admin/worker sees the exact reason (no silent failures).

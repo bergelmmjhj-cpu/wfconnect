@@ -1,0 +1,86 @@
+I approve this architecture direction.
+
+Proceed using this approach:
+
+- Embedded AI operations assistant inside the existing Express backend
+- PostgreSQL-backed job queue
+- Rules-first, AI-second
+- Modular single-service design
+- Phase 1 focus: monitor + alert only
+- No autonomous worker/client commitments yet
+- Full audit logging
+- Human-controlled escalation for critical actions
+
+Now I want you to do the following before writing production code:
+
+1. Translate your recommendation into a concrete technical implementation plan for WFConnect
+Give me:
+- exact files to create
+- exact files to modify
+- database tables to add
+- API routes to add
+- scheduler/jobs to add
+- admin screen(s) to add
+- services/modules to add
+
+2. Scope only Phase 1
+Phase 1 goal:
+- never miss a client request
+- monitor internal request sources
+- alert HR/admin reliably
+- log every detection and action
+- no autonomous outbound worker/client action yet
+
+3. Build the Phase 1 spec around WFConnect’s real existing systems
+Please inspect the current codebase and map Phase 1 to:
+- current backend structure
+- current CRM sync engine
+- current webhook/event sources
+- existing email services
+- existing dashboards/admin screens
+- existing database schema
+- current OpenPhone/webhook infrastructure if relevant
+
+4. Tell me the best exact implementation approach for Phase 1
+I want:
+- architecture diagram in words
+- file-by-file implementation plan
+- data model design
+- queue design
+- retry logic
+- alert rules
+- failure handling
+- admin visibility plan
+
+5. Define the minimum safe Phase 1 feature set
+I want the smallest version that gives immediate business value with minimal operational risk.
+
+6. Tell me what Phase 1 should monitor first
+Rank the best first signals to monitor, based on my actual codebase and current systems.
+
+7. After that, give me an implementation sequence
+Example:
+- step 1 database tables
+- step 2 queue service
+- step 3 monitor service
+- step 4 alerting
+- step 5 admin screen
+- step 6 testing
+- step 7 deployment
+
+Important:
+- Do not jump to Phase 2 yet
+- Do not introduce new infrastructure unless absolutely necessary
+- Prefer what already exists in WFConnect
+- Keep it production-safe and auditable
+- Reliability matters more than sophistication
+
+At the end, provide:
+1. Phase 1 architecture
+2. exact implementation plan
+3. exact file list
+4. database changes
+5. risks and safeguards
+6. recommended first build order
+
+Do not code yet until the implementation plan is complete.

@@ -1,0 +1,168 @@
+Implement an ADMIN “Hours Automation” module that supports TWO parallel cycles:
+1) WEEKLY invoicing to clients (every Monday)
+2) BI-WEEKLY payroll cutoffs (2026 cutoff calendar provided)
+
+Primary purpose: eliminate manual counting of hours by auto-summing approved work logs, and producing invoice/payroll-ready exports grouped per hotel.
+
+Core Principles
+- Single source of truth for hours = APPROVED work logs in the app.
+- Same underlying aggregation logic, two different “date window” modes:
+  A) Weekly window (Mon–Sun) for client invoicing
+  B) Bi-weekly cutoff window (period 1–26) for payroll
+
+Data Model (migrate if missing)
+1) work_logs (required)
+- id
+- workerId
+- hotelId
+- startTime (datetime, tz-aware) OR workDate
+- endTime (datetime, tz-aware) OR hoursWorked
+- breakMinutes (int, default 0)
+- status: submitted|approved|rejected|cancelled
+- approvedBy, approvedAt
+- createdAt, updatedAt
+Hour calculation:
+- hoursWorked = max(0, (endTime-startTime) - breakMinutes) converted to hours
+- Round to 2 decimals (or nearest 0.25; pick one and apply consistently)
+
+2) payment_profiles (required for payroll exports)
+- workerId
+- etransferEmail
+- voidChequeFileId OR encrypted bank fields
+- updatedAt
+
+3) hotels, workers tables as needed.
+
+Timezone / Boundaries
+- Use America/Toronto for all boundaries.
+- Window is inclusive:
+  - start = 00:00:00
+  - end = 23:59:59
+
+ADMIN UI: /admin/hours
+Create tabs (or segmented control):
+TAB 1: Weekly Client Invoicing
+TAB 2: Bi-weekly Payroll Cutoffs
+
+TAB 1: Weekly Client Invoicing (Mon–Sun)
+Controls:
+- Week selector:
+  - Default = previous week (since invoices generated Monday for the prior Mon–Sun)
+- Hotel selector (single hotel) + “All Hotels”
+Preview (grouped by hotel):
+- WorkerName, WorkerId
+- TotalHours (sum approved logs in the week)
+- LogsCount
+Exports:
+1) Invoice Summary (CSV/XLSX) per hotel:
+- Hotel, WeekStart, WeekEnd
+- WorkerName, WorkerId, TotalHours, LogsCount
+- Optional Amount fields if rates exist
+2) Detailed Invoice Backup (CSV/XLSX):
+- one row per approved log: date, start, end, breaks, hours
+
+TAB 2: Bi-weekly Payroll Cutoffs (2026 calendar)
+Controls:
+- Year selector (default 2026/current)
+- Period selector (1–26) showing start/end dates
+- Hotel selector (single hotel) + “All Hotels”
+Preview (grouped by hotel):
+- WorkerName, WorkerId
+- TotalHours (sum approved logs in cutoff window)
+- LogsCount
+- Payment info: eTransfer email + void cheque/bank ref (mask in UI)
+Exports:
+1) Payroll Timesheet (CSV/XLSX) per hotel:
+- Hotel, CutoffPeriod, CutoffStart, CutoffEnd
+- WorkerName, WorkerId
+- TotalHours, LogsCount
+- EtransferEmail, VoidChequeOrBankRef
+2) Payroll Payment Summary (CSV/XLSX):
+- Same as above plus optional pay fields if rates exist
+
+Backend API (admin-only, server-side auth)
+Shared aggregation endpoint (recommended):
+- GET /api/admin/hours/aggregate
+  Params:
+  - mode=weekly|cutoff
+  - weekStart=YYYY-MM-DD (when mode=weekly)
+  - year=2026&period=5 (when mode=cutoff)
+  - hotelId=123 OR hotelId=all
+Returns:
+- perHotel groups:
+  - hotel info
+  - workers: {workerId, name, totalHours, logsCount, paymentProfile...}
+  - hotelTotals: totalHoursAllWorkers, totalLogs
+
+Export endpoints:
+- GET /api/admin/hours/export
+  Params:
+  - mode=weekly|cutoff
+  - weekStart=YYYY-MM-DD OR year/period
+  - hotelId
+  - type=invoiceSummary|invoiceDetailed|payrollTimesheet|payrollPaymentSummary
+  - format=csv|xlsx
+- POST /api/admin/hours/export/all (optional) -> ZIP across hotels
+
+Window Logic
+A) Weekly (for invoicing)
+- weekStart must be a Monday.
+- weekEnd = weekStart + 6 days.
+- Filter logs where startTime (or workDate) is within [weekStart..weekEnd].
+
+B) Bi-weekly cutoff (for payroll)
+- Use EXACT cutoff calendar for 2026 below.
+- Filter logs within [cutoffStart..cutoffEnd].
+
+Cutoff Calendar (EXACT, 2026, inclusive)
+Period 1:  Dec 27 – Jan 9
+Period 2:  Jan 10 – Jan 23
+Period 3:  Jan 24 – Feb 6
+Period 4:  Feb 7 – Feb 20
+Period 5:  Feb 21 – Mar 6
+Period 6:  Mar 7 – Mar 20
+Period 7:  Mar 21 – Apr 3
+Period 8:  Apr 4 – Apr 17
+Period 9:  Apr 18 – May 1
+Period 10: May 2 – May 15
+Period 11: May 16 – May 29
+Period 12: May 30 – Jun 12
+Period 13: Jun 13 – Jun 26
+Period 14: Jun 27 – Jul 10
+Period 15: Jul 11 – Jul 24
+Period 16: Jul 25 – Aug 7
+Period 17: Aug 8 – Aug 21
+Period 18: Aug 22 – Sep 4
+Period 19: Sep 5 – Sep 18
+Period 20: Sep 19 – Oct 2
+Period 21: Oct 3 – Oct 16
+Period 22: Oct 17 – Oct 30
+Period 23: Oct 31 – Nov 13
+Period 24: Nov 17 – Nov 27
+Period 25: Nov 28 – Dec 11
+Period 26: Dec 12 – Dec 25
+Notes:
+- Treat Dec 27–31 as part of “2026 Period 1”.
+- Use America/Toronto for boundaries.
+
+Scheduling (optional but recommended)
+1) Weekly invoice generation job
+- Cron: every Monday 06:00 America/Toronto
+- Generates previous week (Mon–Sun) invoice summaries and stores snapshots:
+  - invoices_weekly table + invoice_lines_weekly
+
+2) Payroll cutoff snapshot job (optional)
+- Cron: every cutoff end date +1 day at 06:00
+- Generates payroll snapshot for that cutoff for audit.
+
+Security / Audit
+- Mask bank info in UI; full details allowed in export downloads (admin only).
+- Audit log every export:
+  - adminId, timestamp, mode, window dates, hotelId(s), type, format.
+
+Deliverables
+- Admin UI with 2 modes (weekly invoicing + bi-weekly payroll)
+- Shared aggregation logic to eliminate manual counting
+- CSV/XLSX export generation (+ optional ZIP)
+- Optional scheduled jobs + snapshot tables
+- Tests: weekly boundary calc, cutoff mapping, hour summation, export columns

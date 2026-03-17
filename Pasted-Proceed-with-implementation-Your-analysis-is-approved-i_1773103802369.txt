@@ -1,0 +1,109 @@
+Proceed with implementation.
+
+Your analysis is approved, including these refinements:
+
+Approved refinements
+1. Replace the broken hardcoded "System Users: 4" admin dashboard stat with the real "Pending Accounts" stat.
+2. Add businessName as an optional field to registerUserSchema so it is validated properly instead of being read outside the schema.
+3. Do not change LoginScreen Google request payload for role. Role must remain optional on /api/auth/google and only be applied during new-user creation.
+4. Reuse /api/users in DashboardScreen for pending account count instead of creating a new endpoint.
+5. Do not create a wrapper component for this pass. Use shared layout constants in theme.ts plus inline wide-web conditional patterns consistent with the existing codebase.
+
+Final implementation plan
+
+A. Shared layout constants
+In client/constants/theme.ts:
+- Add a Layout export with:
+  - webFormMaxWidth: 480
+  - webContentMaxWidth: 900
+  - webModalMaxWidth: 560
+
+B. Auth / registration fixes
+In shared/schema.ts:
+- Change registerUserSchema role to only allow:
+  - "worker"
+  - "client"
+- Add businessName as an optional field to the schema
+
+In client/screens/SignUpScreen.tsx:
+- Ensure Google sign-up sends selectedRole in the request body:
+  - { idToken, role: selectedRole }
+- Apply web max-width constraints using Layout.webFormMaxWidth
+
+In client/screens/LoginScreen.tsx:
+- Apply web max-width constraints using Layout.webFormMaxWidth
+- No role changes here
+
+In server/routes.ts:
+- Update POST /api/auth/google so role is optional and only used when creating a new user
+- Clamp allowed Google self-registration roles to:
+  - "worker"
+  - "client"
+- Default to "worker" if absent or invalid
+- Add admin notification email immediately after successful db.insert(users) for:
+  - POST /api/auth/register
+  - POST /api/auth/google when a new user is created
+- Send notification non-blocking with .catch()
+- Send to admin@wfconnect.org
+- Subject format:
+  - New account pending approval — [name] ([role])
+
+C. Dashboard and admin visibility
+In client/screens/DashboardScreen.tsx:
+- Remove/replace the hardcoded "System Users: 4" placeholder stat
+- Reuse /api/users via TanStack Query
+- Derive:
+  - pendingAccountsCount = users.filter(u => !u.isActive).length
+- Show this as "Pending Accounts"
+- Make the stat navigate to UserManagement on press
+
+D. Web layout fixes
+In client/screens/LoginScreen.tsx:
+- Constrain form width on wide web to Layout.webFormMaxWidth
+- Center it properly
+
+In client/screens/SignUpScreen.tsx:
+- Same as LoginScreen
+
+In client/screens/UserManagementScreen.tsx:
+- Constrain modal containers on web using Layout.webModalMaxWidth
+
+Also, where appropriate in authenticated page content:
+- Use Layout.webContentMaxWidth for screen body width constraints if needed
+- Keep implementation minimal and consistent with the current code style
+
+E. Remaining server fixes
+In server/routes.ts:
+- Fix the delete bug
+- Improve the invite 409/conflict response message so it is clearer and more actionable
+
+Implementation rules
+- Do not do a broad rewrite
+- Keep mobile/native behavior intact
+- Reuse existing patterns in the codebase
+- Keep changes production-safe and minimal
+- Do not add a new endpoint for pending accounts
+- Do not add a wrapper component for this pass
+
+After implementation
+1. Rebuild the app
+2. Verify affected flows
+3. Summarize exactly what changed in each file
+4. Tell me anything that still requires manual/external configuration
+
+Verification checklist
+- Login screen is centered and constrained on wide desktop
+- Sign-up screen is centered and constrained on wide desktop
+- UserManagement modals are constrained on web
+- Google sign-up respects selected role for new users
+- Login Google flow still works without role
+- registerUserSchema rejects admin/hr self-registration
+- businessName is validated properly through schema
+- Admin notification email fires after new account creation
+- Dashboard shows real Pending Accounts count
+- Pending Accounts stat opens UserManagement
+- Delete bug is fixed
+- Invite 409 message is clearer
+- App rebuild succeeds
+
+Also explicitly tell me after coding whether Google Cloud Console still needs manual authorized origin / redirect URI updates for app.wfconnect.org.

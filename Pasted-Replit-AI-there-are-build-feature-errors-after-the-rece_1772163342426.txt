@@ -1,0 +1,55 @@
+Replit AI — there are build/feature errors after the recent changes. Fix these immediately and re-verify the whole app.
+
+A) QUO Text/Call implementation is WRONG
+1) Remove “Text” and “Call” buttons from TitoCard / TITO Logs.
+   - TITO Logs should NOT directly launch SMS/dialer from each card.
+
+2) Implement a dedicated “Communications” screen (or “Messages”) that:
+   - Pulls conversation threads via QUO API (so the user can continue the thread inside the app).
+   - Allows sending/receiving messages in-app (thread view).
+   - Allows calling from within the app (or opens dialer) using the correct number.
+
+3) Phone number correction (critical)
+- (289) 270-2031 is the shifts blasting/webhook/confirmation number ONLY. Do NOT use it for calling/texting in the UI.
+- (289) 670-5697 (HR Number - WFConnect) MUST be the number used for both calling + texting by admins/HR.
+
+Acceptance:
+- Clicking Call/Text anywhere uses (289) 670-5697 only.
+- The shifts/webhook number (289) 270-2031 is never shown as a “call” option in UI.
+
+B) “Add Worker” is broken (grave)
+In Workplace > Add Worker, search shows “All onboarded workers are already assigned” and no workers can be found/added.
+- Investigate the data query and filtering logic for worker search + assignment list.
+- Fix so unassigned onboarded workers appear and can be added.
+- Confirm it works for at least: (1) empty search, (2) partial name/email search.
+
+Acceptance:
+- Unassigned workers appear in list.
+- Search returns correct matches.
+- Assign action successfully adds worker to workplace.
+
+C) TITO cards are too large
+- TitoCard layout is still too tall and wastes space.
+- Make it minimal by default:
+  - Show only: Name, Date, Status, Time In, Time Out (and GPS verified icon).
+  - Everything else goes into a collapsible “Details” section (expand/collapse).
+- Reduce padding/margins aggressively so more records fit on screen.
+
+Acceptance:
+- At least ~2x more cards fit per screen than current.
+- Details are accessible via expand, but default view stays compact.
+
+D) Review for missed items + build errors
+- Run a full app build and fix any errors/warnings introduced by the refactor.
+- Re-check that:
+  - Management > TITO Logs is no longer a placeholder and shows real data.
+  - Sticky filters behave correctly.
+  - Time-in/out server constraints still enforced (no identical timestamps).
+  - Email Timesheet button still exists and works as intended.
+
+Deliverables in your reply:
+1) List of files changed
+2) What caused the Add Worker bug (root cause) + fix summary
+3) QUO Communications screen: what endpoints used, how threads are loaded/sent
+4) Confirmation that calling/texting uses only (289) 670-5697
+5) How to test each fix step-by-step

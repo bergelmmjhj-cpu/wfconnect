@@ -1,0 +1,87 @@
+I reviewed the WFConnect issues and I want you to proceed using the following scoped fix plan.
+
+This plan is intentionally focused on what is actionable now without major architectural rewrites.
+
+Files involved and issues to address
+
+1. server/routes.ts
+Issues:
+- delete bug
+- invite 409 message
+- Google sign-up role handling
+- admin notification on new registration
+
+2. shared/schema.ts
+Issues:
+- registerUserSchema currently allows admin/hr self-registration roles
+
+3. client/screens/SignUpScreen.tsx
+Issues:
+- Google auth does not send selectedRole
+- no web max-width / poor layout on desktop
+
+4. client/screens/LoginScreen.tsx
+Issues:
+- no web max-width / poor layout on desktop
+
+5. client/screens/UserManagementScreen.tsx
+Issues:
+- modal containers are unconstrained on web
+
+6. client/screens/DashboardScreen.tsx
+Issues:
+- missing Pending Accounts stat
+
+7. client/constants/theme.ts
+Issues:
+- missing shared web layout width constants
+
+What I want from you
+
+Please review this plan critically and tell me whether it is the best implementation approach, or if any part should be adjusted before coding.
+
+My proposed fix plan:
+
+A. Web layout / spacing fixes
+- Add shared layout constants in theme.ts for web form width and authenticated content width
+- Apply max-width constraints to LoginScreen and SignUpScreen so forms are centered and no longer stretch across large desktop screens
+- Constrain modal widths in UserManagementScreen on web
+- Reuse shared constants instead of hardcoding widths in multiple files
+
+B. Authentication and registration fixes
+- In shared/schema.ts, restrict registerUserSchema role to only worker and client
+- In SignUpScreen.tsx, send selectedRole during Google sign-up
+- In server/routes.ts, update Google registration logic so new Google users can be created as client or worker based on allowed input, defaulting safely to worker
+- Add admin notification email when a new account is created through regular registration or Google registration
+
+C. Dashboard and admin visibility fixes
+- Add a Pending Accounts stat to DashboardScreen
+- Count inactive/unapproved users and surface that count clearly for admin/HR
+- Make the stat navigate to User Management if appropriate
+
+D. Server-side cleanup / bug fixes
+- Fix the delete bug in server/routes.ts
+- Improve the invite conflict / 409 response so the message is clearer and more actionable
+
+Before you code, I want you to answer these questions:
+
+1. Is this the correct scope for a clean first pass?
+2. Are there any hidden dependencies or side effects in these files that I should know about?
+3. Is there a better way to implement the web max-width constraints so it is reusable across future screens?
+4. For the Pending Accounts stat, is it better to reuse an existing users query or add a small dedicated endpoint?
+5. For admin notifications, what is the cleanest place in the registration flow to trigger them?
+6. Are there any validation, security, or UX improvements closely related to these changes that should be included now while touching these files?
+
+Then, after your analysis, I want you to:
+- confirm the final implementation plan
+- implement the fixes directly
+- rebuild the app
+- summarize exactly what you changed in each file
+- list anything still requiring external configuration or manual action
+
+Important constraints:
+- Do not do a broad rewrite
+- Do not change unrelated business logic
+- Keep mobile/native behavior intact unless a fix is required
+- Prefer shared reusable patterns over one-off hacks
+- Keep the result production-safe and easy to maintain

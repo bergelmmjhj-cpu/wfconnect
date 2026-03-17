@@ -1,0 +1,167 @@
+Before building anything, I want your architectural recommendation.
+
+Goal
+I want to build a 24/7 AI operations assistant for WFConnect that ensures no client request is ever missed.
+
+The assistant should be able to:
+- monitor incoming client requests
+- support HR operations
+- analyze CRM data
+- monitor the WFConnect mobile app
+- send text messages to workers
+- notify HR immediately when needed
+- escalate urgent issues
+- log all activity
+- operate continuously (24/7)
+
+The assistant will likely use Claude and/or OpenAI.
+
+Important: 
+Do NOT start coding yet. First I want your system architecture recommendation.
+
+Context
+WFConnect already has:
+- a web app
+- a mobile app
+- a CRM database
+- worker onboarding and approval flows
+- HR/admin dashboards
+- user management
+- shift and staffing coordination
+
+The assistant should integrate with these systems.
+
+What I want from you
+
+1. Architecture recommendation
+What is the best architecture for a reliable 24/7 assistant?
+
+For example:
+- event-driven system
+- background worker queues
+- cron / scheduler tasks
+- webhook listeners
+- message broker
+- microservices vs single service
+
+Explain which architecture is best for reliability.
+
+2. AI stack recommendation
+Should the system use:
+- OpenAI
+- Claude
+- both
+- rules engine + AI
+
+Explain which model should handle which tasks.
+
+3. Service design
+Should this assistant be:
+
+Option A:
+A single centralized AI service
+
+Option B:
+Multiple modules such as:
+- client request monitor
+- HR assistant
+- worker messaging service
+- CRM analyzer
+- escalation engine
+
+Explain the best structure.
+
+4. 24/7 reliability
+Explain how to ensure the assistant runs continuously.
+
+Consider:
+- deployment environment
+- background workers
+- retry logic
+- job queues
+- monitoring
+- logging
+- error recovery
+
+5. Integrations
+Which integrations should be built first?
+
+Possible systems:
+- CRM
+- WFConnect mobile app backend
+- SMS messaging
+- email
+- website forms
+- internal HR notifications
+
+Rank them by importance.
+
+6. Messaging workers
+What is the safest way to automate worker outreach?
+
+Example:
+- availability check messages
+- follow-up reminders
+- response collection
+- escalation to HR
+
+Explain how to avoid mistakes or spam.
+
+7. Decision boundaries
+What decisions should NOT be automated at first?
+
+For example:
+- final staffing assignments
+- client commitments
+- pricing decisions
+- contract confirmations
+
+Explain where human approval should remain.
+
+8. Database and state management
+What data should be stored for the assistant?
+
+Examples:
+- request history
+- worker message logs
+- AI decision logs
+- escalation records
+- retry queues
+
+Explain the best structure.
+
+9. Admin controls
+What admin dashboard features are needed to supervise the assistant?
+
+Examples:
+- live request monitor
+- AI action log
+- manual override
+- approval workflows
+- escalation alerts
+
+10. Implementation roadmap
+Propose a phased implementation plan:
+
+Phase 1 – minimal but valuable
+Phase 2 – deeper automation
+Phase 3 – full operational assistant
+
+Constraints
+- reliability is more important than AI complexity
+- system must be auditable
+- no silent failures
+- humans must remain in control for critical decisions
+
+Deliverables
+Provide:
+
+1. recommended architecture
+2. recommended AI model usage
+3. recommended system modules
+4. recommended integrations
+5. reliability strategy
+6. risk considerations
+7. phased development roadmap
+
+Do not start coding yet. First give the architecture recommendation.

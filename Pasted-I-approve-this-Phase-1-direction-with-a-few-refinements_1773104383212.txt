@@ -1,0 +1,93 @@
+I approve this Phase 1 direction with a few refinements. Please update the implementation plan accordingly before coding.
+
+Approved Phase 1 direction
+- Embedded AI assistant inside existing Express backend
+- No new infrastructure
+- PostgreSQL persistence only
+- Alerting and audit logging only
+- No autonomous worker/client actions yet
+- Admin screen for visibility and manual trigger
+
+Refinements to include
+
+1. Add pause/resume controls
+In addition to:
+- GET /api/ai-assistant/status
+- GET /api/ai-assistant/logs
+- POST /api/ai-assistant/trigger
+
+Also add:
+- POST /api/ai-assistant/pause
+- POST /api/ai-assistant/resume
+
+The assistant must be pausable without shutting down the server.
+
+2. Expand assistant status data
+GET /api/ai-assistant/status should include:
+- isRunning
+- isPaused
+- lastRunAt
+- lastSuccessAt
+- lastErrorAt
+- alertsSentToday
+- recentErrorCount
+- monitor state summary
+
+3. Prevent first-run backfill spam
+For contact lead and other alert rules, do not accidentally alert on old records during the first deployment.
+Use one of these safe approaches:
+- only monitor records created after assistant activation timestamp, or
+- persist a bootstrap/activation cutoff, or
+- otherwise safely prevent old data from triggering initial alerts
+
+Implement the cleanest option.
+
+4. Add log pagination guardrails
+For GET /api/ai-assistant/logs:
+- default limit 50
+- maximum limit 200
+- paginated newest-first
+
+5. Add indexing / performance review
+When adding ai_action_logs and ai_alert_state, ensure indexes or constraints support:
+- deduplication lookups
+- newest-first log queries
+- frequent monitor queries
+
+Also review whether existing source tables already have suitable indexes for the monitor filters.
+
+6. Verify shift request rule semantics against actual schema
+Before implementing the unacknowledged shift request rule, confirm that:
+- status = 'open'
+- requested_worker_id IS NULL
+really means the request has not been acknowledged/handled.
+
+If the current rule is not precise enough, adjust it to match the true business meaning without broad rewrites.
+
+7. Daily digest deduplication
+For the pending accounts digest, do not rely only on clock window checks.
+Ensure only one digest is sent per day using persisted state or the action log.
+
+Now I want you to do this:
+
+A. Update the Phase 1 implementation plan with these refinements
+B. Confirm the final file list
+C. Confirm the final schema changes
+D. Confirm the final API routes
+E. Confirm the exact rule logic you will implement
+F. Then proceed to code
+
+Important:
+- Keep this Phase 1 only
+- Do not expand into Phase 2
+- Keep everything production-safe and auditable
+- Reliability matters more than sophistication
+
+After implementation, provide:
+1. files changed
+2. schema changes
+3. routes added
+4. alert rules implemented
+5. safeguards added
+6. test/verification results
+7. anything requiring manual configuration
