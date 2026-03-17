@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "Workforce Connect",
+    "slug": "workforce-connect",
+    "version": "1.0.6",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "workforceconnect",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
+    "runtimeVersion": "exposdk:54.0.0",
+    "updates": {
+      "url": "https://wfconnect.org/manifest",
+      "enabled": true,
+      "fallbackToCacheTimeout": 5000,
+      "requestHeaders": {}
+    },
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.workforceconnect.app",
+      "buildNumber": "52",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+
+    "android": {
+      "package": "com.workforceconnect.app",
+      "versionCode": 11,
+      "adaptiveIcon": {
+        "backgroundColor": "#1E40AF",
+        "foregroundImage": "./assets/images/icon.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/icon.png"
+    },
+
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#1E40AF",
+          "dark": {
+            "backgroundColor": "#0F172A"
+          }
+        }
+      ],
+      "expo-web-browser"
+    ],
+
+    "experiments": {
+      "reactCompiler": true
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "c22a2ab9-db91-441e-8069-bfb4a4890f48"
+      }
+    },
+
+    "owner": "bergel"
+  }
+}
