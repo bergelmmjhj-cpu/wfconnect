@@ -1,0 +1,115 @@
+You are Replit AI working on our Workforce Connect codebase.
+
+PROBLEM
+You keep missing requirements and claiming things are implemented when they are not. This time you must:
+1) Read the existing code first.
+2) Produce a gap analysis against my requirements.
+3) Implement with a verifiable checklist.
+4) Provide exact file paths and what you changed.
+
+ABSOLUTE RULES
+- Do not claim any feature is “already working” unless you cite the exact files + functions + routes that prove it.
+- If you are unsure, say “unknown” and inspect the code.
+- No paid AI features. No Stripe. No face verification.
+- HR assigns only. Client requests only. Workers accept/decline.
+- Push notifications must work for offers + messages.
+
+STEP 0: CODEBASE INSPECTION (MANDATORY)
+Before proposing solutions:
+- Identify where these live (file paths):
+  A) Shift creation / shift requests
+  B) Offer creation / broadcast
+  C) Worker accept/decline
+  D) Assignment finalization (who sets assignedWorkerId)
+  E) Push notification sending (provider, tokens, send function)
+  F) Worker shift list UI + offer UI
+  G) Clock-in / timesheet logic
+- Output a short map: “Feature → file(s) → key functions”
+
+STEP 1: GAP ANALYSIS (MANDATORY)
+Compare current implementation vs requirements below and list:
+- Missing
+- Partially implemented
+- Buggy (ex: “shift blast not happening”)
+- Risky (race conditions)
+For each gap, include: suspected root cause + exact file(s) to change.
+
+STEP 2: IMPLEMENTATION (PHASE 1)
+Implement everything in this checklist, in this order:
+
+CHECKLIST A — SHIFT BROADCAST MUST WORK
+A1) Eligibility filter returns correct worker list and logs results.
+A2) shift_offers are created with unique constraint (shiftId, workerId) to avoid duplicates.
+A3) Push notifications are actually sent to those workers (verify tokens exist, verify send function returns success, log failures).
+A4) Worker receives offer in-app and can Accept/Decline.
+A5) Add /admin/debug/broadcast/:shiftId that returns:
+    - eligibleCount
+    - offersCreatedCount
+    - pushAttemptedCount
+    - pushSucceededCount
+    - pushFailedCount with error reasons
+
+CHECKLIST B — FIRST ACCEPT WINS + FILLED NOTIFICATIONS
+B1) Accept endpoint is transactional/atomic:
+    - If shift already assigned, reject accept with “Already filled.”
+    - Else assign shift to accepting worker.
+B2) Expire all other pending offers immediately.
+B3) Notify other workers: “Shift filled” push + update offer UI to FILLED state.
+
+CHECKLIST C — CLOCK-IN SMART REASONS + LATE REASON + HR ALERT
+C1) Clock-in attempt must always show specific reason if blocked:
+    - Too early with countdown
+    - Shift ended
+    - Too far (feature-flag if GPS not enabled)
+    - Already clocked-in
+C2) Late clock-in (after grace period) requires reason selection + optional note.
+C3) Late clock-in is allowed but flagged; HR is notified; audit_log entry is created.
+C4) Add “missed shift” automation:
+    - If not checked-in by X minutes, push worker “On my way / I have an issue”
+    - If still not checked-in by Y minutes, notify HR “possible no-show”
+
+CHECKLIST D — WORKER UI MUST BE INTUITIVE
+D1) Offer card shows Accept + Decline.
+D2) Decline requires confirmation modal “Are you sure?”
+D3) Shift cards show context status:
+    - Starts in X
+    - Clock-in available + Clock In button
+    - Late — explain
+    - Filled
+    - Completed
+D4) Tap shift card goes directly to clock-in screen.
+
+CHECKLIST E — AUDIT LOG + SCHEDULER
+E1) audit_log table exists and is written for:
+    - broadcast started
+    - offers created
+    - offer accepted/declined
+    - shift assigned
+    - late clock-in
+    - no-show risk
+E2) Scheduled job runs every 1–5 minutes to do:
+    - wave broadcast escalation (optional if time)
+    - missed shift prompts
+    - upcoming reminders (optional)
+
+STEP 3: VERIFICATION (MANDATORY)
+After implementation, provide:
+- A test plan with 10 exact steps I can follow in the app to verify.
+- What logs I should see (example log lines).
+- Screenshots are optional, but include endpoint curl examples for debug endpoints.
+
+REQUIREMENTS (DO NOT SKIP)
+1) HR-only assignment, but HR can broadcast offers.
+2) If client request does NOT specify a worker, broadcast to eligible workers.
+3) Push notifications must trigger for:
+   - shift offers
+   - shift filled
+   - shift assigned
+   - missed shift prompts
+   - messages
+4) Worker accepts/declines via buttons.
+5) If someone accepts, other workers must immediately see “Filled” and be notified.
+6) Clock-in must be smart: show exact reason; late requires reason; HR notified.
+
+Now do Step 0 and Step 1 first. Do not jump to coding until you output the map + gap analysis.
+Then implement Step 2 with the checklist, and finish with Step 3 verification.

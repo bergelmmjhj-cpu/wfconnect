@@ -1,0 +1,153 @@
+You are working on ClawdAI, a 24/7 workforce operations assistant for WFConnect.
+
+Your goal is to make ClawdAI smarter, more operationally useful, and more fault-tolerant in real-world staffing conversations.
+
+Core rule:
+ClawdAI must NEVER stop at “analysis unavailable,” “worker not found,” or “number not recognized” when the user’s intent is still obvious. It must continue with best-effort operational handling, fallback logic, alerting, and clear next actions.
+
+Implement the following product behavior:
+
+1. MESSAGE INTENT DETECTION
+Build a robust classifier for incoming SMS, chat, and user commands.
+It must detect at minimum:
+- staff call-off / sick call / late / cannot attend
+- client staffing request
+- shift creation request
+- shift update / cancellation
+- worker search request
+- ambiguous but likely staffing-related urgent messages
+
+Examples of staff call-off:
+- “I’m sick today”
+- “Can’t make it to work”
+- “I won’t be able to go”
+- “Running late”
+- “I cannot attend my shift”
+- “Emergency, can’t come today”
+
+Examples of client requests:
+- “Can I have Nino tomorrow”
+- “Can I have 2 hk tomorrow”
+- “I need housekeepers tomorrow”
+- “Need 1 cleaner at 7am”
+- “Can someone cover tonight”
+- “Can I request Bergel for tomorrow”
+
+2. DO NOT DEPEND FULLY ON PHONE NUMBER MATCH
+If an SMS comes in and the phone number is not recognized:
+- still classify the message
+- still generate an operational alert
+- still notify Discord if it looks like a staffing issue
+- still notify GM Lilee if configured
+- mark the message as “unmatched sender” instead of failing
+- attempt fuzzy matching using names mentioned in message
+- attempt shift inference from date/time/workplace text
+- attempt client inference from known workplace names in message
+
+3. FALLBACK LOGIC FOR STAFF CALL-OFFS
+If message is likely a staff absence:
+- create an incident even if sender is unknown
+- extract any available details:
+  - worker name
+  - date
+  - time
+  - workplace
+  - reason
+- search today/tomorrow shifts for matching worker names or likely workplace references
+- if no exact worker match is found, still send Discord alert:
+  “Possible call-off detected from unmatched number. Manual review needed.”
+- if no shift is found, still alert operations because staff may be using another number
+
+4. FALLBACK LOGIC FOR CLIENT REQUESTS
+If message is likely a client staffing request:
+- do not require an exact client phone match
+- classify as request even from unknown number
+- extract:
+  - requested worker name if any
+  - requested role(s)
+  - quantity
+  - date
+  - time
+  - workplace if mentioned
+- if no client record is found, still create a request item:
+  “Possible client request from unmatched number”
+- send Discord alert if urgent or actionable
+- provide suggested next action instead of failing
+
+5. SHIFT CREATION UX MUST BE FORGIVING
+When user says:
+“Create a shift tomorrow for Bergel MMJ at Hyatt place. 8-4:30am”
+the assistant must:
+- parse worker name flexibly
+- parse compressed names like BergelMMJ
+- parse likely workplace aliases like “Hyatt place”
+- parse time ranges robustly
+- if worker is not found exactly:
+  - try fuzzy matching
+  - try phone lookup if later provided
+  - keep the shift draft alive in memory/session
+  - when user later sends only a phone number, continue the same flow instead of returning analysis unavailable
+- do not lose context between follow-up messages
+
+6. CONVERSATION CONTINUITY
+Add pending action state for incomplete workflows.
+Example:
+User: “Create a shift tomorrow for BergelMMJ at Hyatt place. 8-4:30am”
+Assistant cannot find worker exactly.
+User later replies: “4372188887”
+Assistant should interpret that as the phone number for the pending worker lookup in the current shift-creation flow, not as a standalone analytics request.
+
+Implement:
+- pending_intent
+- pending_entity_resolution
+- pending_shift_draft
+- expiry window for active conversational tasks
+- resume logic on next short reply
+
+7. NEVER SHOW “ANALYSIS UNAVAILABLE” FOR OPERATIONAL REQUESTS
+Replace dead-end responses with:
+- what was understood
+- what was matched
+- what was not matched
+- what fallback action was taken
+- what still needs human confirmation if applicable
+
+8. DISCORD ALERTING
+For staff call-offs and client requests, generate clear Discord messages.
+
+Examples:
+STAFF CALLOFF:
+🔴 POSSIBLE CALLOFF
+Sender: Unmatched number 437-xxx-xxxx
+Worker mentioned: Maria Santos
+Workplace: Holiday Inn Victoria
+Shift: Not confirmed
+Message: “I’m sick today and can’t make it”
+Action: Manual review needed
+
+CLIENT REQUEST:
+🟡 CLIENT REQUEST DETECTED
+Sender: Unmatched number
+Request: 2 housekeepers tomorrow
+Workplace: Not confirmed
+Action: Review and assign coverage
+
+9. RESPONSE QUALITY
+Responses must be:
+- concise
+- action-oriented
+- operational
+- never overly technical to the end user
+- internally logged with structured metadata
+
+10. IMPLEMENTATION REQUIREMENTS
+Please make actual code changes, not just recommendations.
+After changes, provide:
+- files changed
+- schema changes if any
+- new prompt logic
+- new intent parser behavior
+- examples of before vs after
+- edge cases handled
+
+Now inspect the current ClawdAI codebase and implement this end-to-end.

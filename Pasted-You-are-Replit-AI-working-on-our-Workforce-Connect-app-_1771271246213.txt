@@ -1,0 +1,88 @@
+You are Replit AI working on our Workforce Connect app.
+
+REQUEST
+Suggest (and then implement) additional automation across ALL core functions for Worker / HR / Client. The goal is: fewer steps, fewer errors, fewer follow-ups, and more “it just happens automatically.”
+
+DELIVERABLE
+1) Give a prioritized list of automation ideas (high impact + low/medium effort first), grouped by:
+- Scheduling & assignment
+- Messaging & communications
+- Attendance & timesheets
+- Payroll & invoicing
+- Compliance & onboarding
+- Quality control & issue handling
+- Admin & reporting
+2) For the TOP 10 automations, provide:
+- What it does (1–2 lines)
+- Trigger (event/time)
+- Actions (system behavior)
+- Data needed (fields/tables)
+- UI changes (if any)
+- Edge cases / safety checks
+3) Then implement the highest ROI items immediately (Phase 1) without needing more clarification.
+
+CONTEXT / RULES
+- HR is the only role that assigns workers.
+- Clients submit shift requests; if no specific worker requested, we broadcast to eligible workers.
+- Workers accept/decline.
+- Push notifications must exist for shift requests/offers and messages.
+- We also want automated reminders (“on my way”, check-in/out, etc.).
+
+AUTOMATION IDEAS TO INCLUDE (at minimum)
+Scheduling & Assignment
+- Auto-suggest best workers (ranked list) based on: distance, reliability score, cancellations/no-shows, skill match, recent workload fairness, client preference.
+- Auto-broadcast in waves: send to top 20 first; if not filled in 10 minutes, expand to next 50; then all eligible.
+- Auto-fill recurring requests: clients can create repeating requests; HR can one-tap “approve recurring + auto-broadcast each occurrence.”
+- Auto-hold & escalation: if assigned worker hasn’t confirmed by T-12h, auto-broadcast backup offers.
+- Auto-backup list: always keep 1–2 “standby” workers offered as backup.
+
+Messaging & Communications
+- Auto-message templates triggered by events (request submitted, worker assigned, worker declined, shift cancelled).
+- Smart nudges: if client sends request missing key info, prompt client to complete fields before submission.
+- Auto-translate optional toggle for worker/client (EN/FR) for key messages.
+
+Attendance & Timesheets
+- Geofenced check-in (if feasible) OR “location confirmation” with workplace address.
+- Auto-time capture: check-in/out creates timesheet entry; HR only approves exceptions.
+- Auto-flag anomalies: late check-in, early leave, no check-in, overlapping shifts.
+
+Payroll & Invoicing
+- Auto-calc hours from check-in/out, apply break rules, overtime rules (configurable).
+- Auto-generate payroll preview for HR approval each cutoff.
+- Auto-generate client invoice from approved shifts; send PDF/email (if email service exists).
+
+Compliance & Onboarding
+- Auto-remind workers to complete onboarding docs before their first shift.
+- Block assignment if required docs missing; allow HR override with warning + audit log.
+- Auto-expiring certifications with reminders.
+
+Quality Control & Issue Handling
+- Post-shift micro-feedback: client rates shift + notes; worker reports issues.
+- Auto-create incident ticket when “I have an issue” is tapped; notify HR immediately.
+- Auto-blacklist / warning escalation when repeated issues occur (configurable thresholds).
+
+Admin & Reporting
+- Daily digest for HR: unfilled shifts, upcoming shifts, late check-ins, message backlog.
+- Client dashboard: upcoming shifts, assigned workers, last-minute replacements.
+- Worker dashboard: next shifts, required actions (confirm, on-my-way, check-in).
+
+IMPLEMENTATION REQUIREMENTS
+- Create a “Rules/Automation Engine” layer:
+  - event-driven triggers (ShiftRequestSubmitted, OfferAccepted, ShiftStartingSoon, MessageReceived, etc.)
+  - scheduled jobs (every 5 min) for time-based triggers
+  - idempotency keys to prevent duplicate notifications/actions
+  - audit_log entries for every automated action (who/what/when)
+- Provide database schema additions needed for:
+  - worker_score metrics
+  - automation_rules/config
+  - audit_log
+  - notification_queue (if needed)
+
+PHASE 1 IMPLEMENT NOW (choose best ROI)
+- Worker ranking suggestions for HR (even if HR still clicks broadcast/offer)
+- Wave broadcasting + escalation timers
+- Auto-confirm reminders + “on my way” + check-in/out + anomaly flags
+- Auto-templates for key messages
+- Daily HR digest summary
+
+Proceed with design + implementation plan, then implement Phase 1.

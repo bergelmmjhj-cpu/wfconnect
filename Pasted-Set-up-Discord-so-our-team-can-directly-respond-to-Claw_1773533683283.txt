@@ -1,0 +1,204 @@
+Set up Discord so our team can directly respond to ClawdAI from Discord and have those replies flow back into WFConnect / ClawdAI as real actions.
+
+Goal
+Make Discord a two-way operations channel, not just a notification channel.
+
+What I need
+When ClawdAI posts alerts in Discord, authorized team members must be able to reply inside Discord and ClawdAI should understand the reply, link it to the correct staffing event, and take action.
+
+Core behaviors to implement
+
+1. TWO-WAY DISCORD OPERATIONS
+Right now Discord is only for announcements. Change it so Discord can also be used to:
+- acknowledge alerts
+- assign coverage
+- confirm replacements
+- ask ClawdAI questions
+- update shift status
+- mark issue resolved
+- escalate issue
+- request more options
+
+2. EVERY ALERT MUST HAVE CONTEXT
+Whenever ClawdAI posts an alert to Discord, include enough metadata so replies can be mapped back to the correct event.
+Each Discord alert should internally store:
+- event_id
+- alert_type
+- worker_id if known
+- client_id if known
+- workplace_id if known
+- shift_id if known
+- sender_phone if source was SMS
+- original message text
+- created_by_channel = discord
+- discord_message_id
+- discord_channel_id
+- status
+
+Do not expose raw IDs in an ugly way to users unless needed, but keep them attached in the backend.
+
+3. SUPPORTED DISCORD RESPONSE PATTERNS
+ClawdAI must understand common team replies such as:
+- acknowledged
+- on it
+- who is available?
+- send to Nino
+- assign Bergel
+- message the worker
+- notify client
+- mark resolved
+- no coverage found
+- escalate
+- create shift for tomorrow 8-4
+- who called off?
+- what site is this?
+- retry alert
+- resend to GM Lilee
+
+Also support slash-style commands or prefix commands if useful, for example:
+- /clawd assign Bergel
+- /clawd resolve
+- /clawd whoisavailable
+- /clawd notifyclient
+- /clawd summary
+
+4. REPLY LINKING
+If a user replies directly to a ClawdAI Discord message thread or message, ClawdAI must:
+- detect that the reply belongs to that original alert
+- load the related event context
+- interpret the reply within that event
+- take the appropriate action
+
+Example:
+ClawdAI posts:
+“🔴 POSSIBLE CALLOFF — Maria Santos cannot attend Holiday Inn Victoria 2PM–10PM”
+Manager replies:
+“assign Nino”
+ClawdAI should:
+- resolve who Nino is
+- check availability
+- take action if allowed
+- respond in Discord with result
+- log action in audit trail
+
+5. PERMISSIONS / AUTHORIZED USERS
+Only authorized Discord users/roles should be allowed to trigger operational actions.
+Implement role-based authorization, for example:
+- Admin
+- Operations
+- GM
+- Supervisor
+
+Unauthorized users may still see alerts if allowed by Discord permissions, but ClawdAI must not execute sensitive actions from them.
+
+6. DISCORD RESPONSE MODES
+Implement both:
+A. Reply-to-message mode
+- easiest for operations
+- reply under the alert and ClawdAI uses parent message context
+
+B. Command mode
+- for explicit actions
+- examples:
+  - /clawd assign Bergel
+  - /clawd options
+  - /clawd resolve
+  - /clawd help
+
+7. CLAWDAI RESPONSE STYLE IN DISCORD
+Keep replies operational and short.
+
+Format:
+- Understood
+- Action taken
+- Result
+- What is still needed
+
+Example:
+“Understood: assign Nino to this coverage request.
+Action: checked availability and conflict status.
+Result: Nino is available and draft assignment is ready.
+Need: confirm assignment to finalize.”
+
+8. DISCORD THREADING
+If possible, create or use threads for each operational alert so conversation stays organized.
+Preferred flow:
+- ClawdAI posts alert
+- optional thread created automatically
+- all team discussion/replies in that thread stay linked to the same event
+
+If thread creation is too heavy, use reply context from the source message.
+
+9. ACTIONS CLAWDAI SHOULD BE ABLE TO EXECUTE FROM DISCORD
+Implement safe handling for these actions:
+- acknowledge event
+- assign replacement
+- shortlist available workers
+- resend SMS
+- notify GM Lilee
+- notify client
+- mark resolved
+- mark unresolved
+- request more candidates
+- summarize incident
+- open related shift details
+- create follow-up task
+
+10. AUDIT LOGGING
+Every Discord-triggered action must be logged with:
+- discord_user_id
+- discord_username
+- discord_role(s)
+- event_id
+- action_type
+- payload
+- result
+- timestamp
+- success/failure
+- failure_reason if any
+
+11. FAILURE HANDLING
+Never return vague failures.
+If ClawdAI cannot complete an action from Discord, reply with:
+- what was understood
+- what blocked it
+- what fallback was done
+- what human input is needed
+
+Do not say “analysis unavailable”.
+
+12. IMPLEMENTATION DETAILS
+Please inspect the current Discord integration and implement the full backend + prompt/routing support for two-way communication.
+Add:
+- Discord message listener / interaction handler
+- reply-to-alert context resolution
+- command parser
+- permission checks
+- event linking
+- audit log persistence
+- response templates
+- tests
+
+13. TEST CASES TO COVER
+Add tests for:
+- reply to call-off alert with “assign Nino”
+- reply to unknown-number client request with “who is available?”
+- unauthorized Discord user tries to assign worker
+- manager replies “mark resolved”
+- short follow-up like “notify client”
+- command mode “/clawd resolve”
+- reply linked to wrong/nonexistent event
+- Discord thread reply retains context
+
+14. DELIVERABLES
+After implementation, show:
+- architecture summary
+- files changed
+- database/schema changes
+- Discord bot behavior flow
+- sample alert + sample manager replies + sample ClawdAI responses
+- exact commands supported
+- test coverage added
+
+Important product rule
+Discord should feel like the control room for ClawdAI. Alerts should not be dead-end notifications. Managers must be able to act directly from Discord without needing to go back into the app for every step.

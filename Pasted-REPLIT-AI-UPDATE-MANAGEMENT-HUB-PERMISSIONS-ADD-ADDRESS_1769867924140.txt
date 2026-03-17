@@ -1,0 +1,109 @@
+REPLIT AI — UPDATE MANAGEMENT HUB PERMISSIONS + ADD ADDRESS AUTOCOMPLETE (CRITICAL)
+
+Context:
+We already have (or are building) an Admin Management Hub with Workplaces and Worker Assignments.
+We need to expand this so HR can also operate fully in Management, and we need address consistency using autocomplete.
+
+====================================================
+1) ROLE & PERMISSION UPDATE (ADMIN + HR)
+====================================================
+Update role permissions as follows:
+
+Admin:
+- Full access (no change)
+
+HR:
+- MUST have access to the Management Hub
+- MUST be able to:
+  - View, create, edit Workplaces
+  - Assign / invite Workers to Workplaces
+  - View worker lists and workplace assignments
+- MUST NOT:
+  - Finalize payroll
+  - Change global system settings (if any exist)
+
+Implementation:
+- Update RBAC checks so both `admin` AND `hr` roles can access:
+  - Management Hub
+  - Workplaces CRUD
+  - Worker ↔ Workplace assignment endpoints
+- Admin-only restrictions remain only for payroll finalization and system-level settings.
+
+====================================================
+2) MANAGEMENT HUB UI UPDATE
+====================================================
+Navigation:
+- Show “Management” menu item for BOTH Admin and HR
+- Keep role-gated actions inside pages where needed (e.g., payroll finalize)
+
+Workplaces:
+- HR can:
+  - Create new workplace
+  - Edit workplace details
+  - Assign/remove workers from workplace
+- Admin retains same capabilities
+
+====================================================
+3) ADDRESS AUTOCOMPLETE (MANDATORY FOR CONSISTENCY)
+====================================================
+Problem:
+Manual address entry causes inconsistent formatting and incorrect GPS data.
+
+Solution:
+Implement ADDRESS AUTOCOMPLETE for:
+- Workplace address input
+- Worker address input
+
+Requirements:
+- Use an address autocomplete service (Google Places API preferred)
+- As user types, show address suggestions
+- On selection:
+  - Populate structured fields automatically:
+    - addressLine1
+    - city
+    - province/state
+    - postalCode
+    - country
+  - Populate latitude and longitude automatically
+- Do NOT allow free-text addresses unless explicitly overridden by Admin
+
+UI Behavior:
+- Input field labeled “Search Address”
+- Dropdown suggestions appear while typing
+- Selecting a suggestion fills the full address + GPS fields
+- Show a small map preview or lat/lng text (optional but recommended)
+
+Backend:
+- Store normalized address fields + lat/lng
+- GPS coordinates from autocomplete must be used for:
+  - Workplace geofencing
+  - Worker proximity validation (TITO)
+
+====================================================
+4) API & DATA MODEL NOTES
+====================================================
+- Address fields should be consistent across:
+  - Worker profile
+  - Workplace entity
+- Lat/Lng must be REQUIRED before:
+  - Workplace can be activated
+  - GPS-based TITO validation runs
+- If autocomplete fails or no selection is made:
+  - Block save with clear error:
+    “Please select an address from the suggested list.”
+
+====================================================
+5) ACCEPTANCE CRITERIA
+====================================================
+This task is complete only if:
+
+✔ HR can access Management Hub  
+✔ HR can create and edit Workplaces  
+✔ HR can assign workers to Workplaces  
+✔ Address inputs show autocomplete suggestions  
+✔ Selecting an address auto-fills city/province/postal code  
+✔ GPS coordinates are auto-populated and stored  
+✔ Workplace GPS is used for TITO proximity checks  
+✔ Worker address uses the same autocomplete system  
+
+Proceed to implement now. Do not defer or partially implement.

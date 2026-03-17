@@ -1,0 +1,39 @@
+⌛️ Submitting iOS build...
+- Dashboard:    https://appstoreconnect.apple.com/apps/6760573229/distribution
+- App:          Workforce Connect (app.replit.workforceconnect)
+- Build number: 3
+- Binary path:  ./ios/build/WorkforceConnect.ipa
+-------------------
+--- Step: pilot ---
+-------------------
+Creating authorization token for App Store Connect API
+Ready to upload new build to TestFlight (App: 6760573229)...
+Going to upload updated app to App Store Connect
+This might take a few minutes. Please don't interrupt the script.
+[altool] Running altool at path '/Applications/Xcode.app/Contents/SharedFrameworks/ContentDeliveryServices.framework/Frameworks/AppStoreService.framework/Support/altool'...
+[altool] 
+[altool] 2026-03-14 15:23:49.758 ERROR: [altool.600001D50140] [ContentDelivery.Uploader.600001D50140] The provided entity includes a relationship with an invalid value (409) App is Removed or Deleted. Apps can't be validated or submitted while they're removed or deleted. (ID: 942610b2-05d8-4557-9062-1b4edf1cbb88)
+[altool]    NSUnderlyingError : The provided entity includes a relationship with an invalid value (-19241) App is Removed or Deleted. Apps can't be validated or submitted while they're removed or deleted.
+[altool]       status : 409
+[altool]       detail : App is Removed or Deleted. Apps can't be validated or submitted while they're removed or deleted.
+[altool]       source : 
+[altool]          pointer : /data/relationships/app/data/relationships/app/id
+[altool]       id : 942610b2-05d8-4557-9062-1b4edf1cbb88
+[altool]       code : ENTITY_ERROR.RELATIONSHIP.INVALID.INVALID_APP_STATE
+[altool]       title : The provided entity includes a relationship with an invalid value
+[altool]    iris-code : ENTITY_ERROR.RELATIONSHIP.INVALID.INVALID_APP_STATE
+[altool] 2026-03-14 15:23:49.759 ERROR: [altool.600001D50140] Error uploading '/var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/3f15138a-58f9-4c29-9078-cc0265100989.ipa'.
+[altool] 2026-03-14 15:23:49.759 ERROR: [altool.600001D50140] The provided entity includes a relationship with an invalid value App is Removed or Deleted. Apps can't be validated or submitted while they're removed or deleted. (ID: 942610b2-05d8-4557-9062-1b4edf1cbb88) (409)
+[altool]  {
+[altool]     NSLocalizedDescription = "The provided entity includes a relationship with an invalid value";
+[altool]     NSLocalizedFailureReason = "App is Removed or Deleted. Apps can't be validated or submitted while they're removed or deleted. (ID: 942610b2-05d8-4557-9062-1b4edf1cbb88)";
+[altool]     NSUnderlyingError = "Error Domain=IrisAPI Code=-19241 \"The provided entity includes a relationship with an invalid value\" UserInfo={status=409, detail=App is Removed or Deleted. Apps can't be validated or submitted while they're removed or deleted., source={\n    pointer = \"/data/relationships/app/data/relationships/app/id\";\n}, id=942610b2-05d8-4557-9062-1b4edf1cbb88, code=ENTITY_ERROR.RELATIONSHIP.INVALID.INVALID_APP_STATE, title=The provided entity includes a relationship with an invalid value, NSLocalizedDescription=The provided entity includes a relationship with an invalid value, NSLocalizedFailureReason=App is Removed or Deleted. Apps can't be validated or submitted while they're removed or deleted.}";
+[altool]     "iris-code" = "ENTITY_ERROR.RELATIONSHIP.INVALID.INVALID_APP_STATE";
+[altool] }
+Application Loader output above ^
+The call to the altool completed with a non-zero exit status: 1. This indicates a failure.
+Could not download/upload from App Store Connect!
+[!] Error uploading ipa file: 
+ [Application Loader Error Output]: The call to the altool completed with a non-zero exit status: 1. This indicates a failure.
+Error: fastlane run pilot ipa:app-a769166d-a4b5-4a0e-b2c0-8d8edfdf2d56.ipa apple_id:6760573229 skip_waiting_for_build_processing:true api_key_path:asc_api_key-57cef85e-49ba-42b2-891a-fe91ae6a8417.json exited with non-zero code: 1
+/bin/bash -eo pipefail /var/folders/5_/4knlryn57n39p2c_jw8567z00000gn/T/eas-build/b8b5ef95-11e0-4093-a339-0e954af800b7/steps/8cb3b7eb-3cad-461f-ac15-668ffe521e21/scripts/44a47ffc-072e-4ae4-add5-5e4e86bc058f.sh exited with non-zero code: 1

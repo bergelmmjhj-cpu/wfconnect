@@ -1,0 +1,143 @@
+You are Replit AI working on our Workforce Connect app.
+
+REQUEST: Suggest and implement major UX + automation improvements across the WHOLE app (not just roster view). Also:
+1) Require users to upload a profile photo (must discourage fake/non-face uploads; do NOT build unsafe “face recognition”).
+2) Users must be able to update payment methods and payment details reliably (HR/Client/Worker as appropriate).
+
+========================================================
+A) APP-WIDE UX IMPROVEMENTS (like roster view, but everywhere)
+Deliverable: propose 15–25 improvements, then implement the highest ROI Phase 1 (no extra clarification needed).
+Group improvements by module, each with: Problem → Change → Expected impact → Effort (S/M/L).
+
+1) Navigation + speed
+- Add a global “Command Bar / Quick Actions” (Ctrl+K on web, button on mobile):
+  - Create shift request, Smart assign, Broadcast, Message worker, Open roster week, Approve timesheets, Create invoice
+- Add “My Today” home dashboard per role:
+  - HR: unfilled shifts, offers pending, late/no check-ins, messages needing reply
+  - Client: upcoming shifts + assigned workers + change/cancel request
+  - Worker: today’s shifts + required actions (confirm/on-my-way/check-in)
+- Add universal search: workers, clients, workplaces, shifts.
+
+2) Scheduling & staffing clarity
+- Provide 3 scheduling views (simple):
+  - Series List (manage recurring rules)
+  - Week Roster Grid (see who goes where this week)
+  - Day Agenda (mobile-friendly list with actions)
+- Make “Smart Assign” the default CTA wherever a shift is open.
+
+3) Notifications center
+- In-app Notifications Inbox that mirrors push notifications, with filters (shift, message, payroll, system).
+- Mark read/unread; deep links always work.
+
+4) Messaging improvements
+- Quick templates + auto-suggestions (request received, assigned, running late, cancelled).
+- Thread pinned info: workplace address, shift time, assigned worker, important notes.
+- “Reply required” flag for HR/client.
+- Optional auto-translate toggle EN/FR for key system messages (keep original visible).
+
+5) Attendance + timesheets UX
+- One-tap actions in worker app:
+  - “On my way”
+  - “Check-in”
+  - “Check-out”
+- If missed check-in: show blocking banner + one-tap check-in.
+- HR timesheet review screen:
+  - Exceptions first (late/no-checkin/overlap)
+  - Bulk approve
+  - Clear audit trail
+
+6) Reliability & safeguards
+- Every destructive action uses:
+  - soft delete + audit_log
+  - confirmation modal with clear consequences
+- Add “undo” for certain actions (e.g., cancel offer within 30 seconds).
+
+========================================================
+B) PHOTO REQUIREMENT (SAFE + PRACTICAL)
+We need users to upload a profile photo. We want to reject obvious non-face images.
+IMPORTANT: Do NOT implement custom biometric “face recognition” or store biometric templates.
+Implement a safer approach:
+
+1) Requirement
+- Block onboarding completion until profile photo is uploaded (worker + HR; optionally client too).
+- Worker cannot accept shifts until photo is approved (optional toggle).
+
+2) “Is it a real face?” validation (do this safely)
+- Use a reputable face-detection API/service (NOT recognition) OR on-device face detection:
+  - Goal: detect presence of a face in the uploaded image (face bounding box), not identify the person.
+- If face NOT detected:
+  - Reject with a friendly prompt: “Please upload a clear selfie (no group photos, no masks, no cartoons).”
+- Add manual review workflow for edge cases:
+  - status: pending_review | approved | rejected
+  - HR/Admin can approve/reject with reason
+- Add simple liveness option (recommended if feasible):
+  - Ask for a short selfie video or “turn head left/right” capture,
+  - Or use a third-party identity verification provider for liveness.
+  - If not feasible now, Phase 1 = face-detection + manual review.
+
+3) Storage & privacy
+- Store photos in object storage (S3/R2/Supabase storage), save only the URL in DB.
+- Do not store biometric embeddings.
+- Add rate limits and size limits.
+
+Data model:
+- user_photos: id, userId, url, status, reviewerId, reviewedAt, rejectionReason, createdAt
+
+========================================================
+C) PAYMENT METHODS + PAYMENT DETAILS (PCI-SAFE)
+Users must be able to update payment methods and details. Implement WITHOUT storing card numbers.
+
+Rules:
+- Use a payment processor (e.g., Stripe) and store only tokens/IDs:
+  - customerId, paymentMethodId, last4, brand, expMonth/Year (if provided by processor)
+- Do NOT store raw card data in our DB.
+
+For Workers (payouts):
+- Allow workers to update payout details (depending on country):
+  - Option 1: Stripe Connect Express onboarding (recommended)
+  - Option 2: Bank details entry routed through Stripe-hosted UI (no sensitive data stored in app)
+- Store:
+  - stripeAccountId, payoutsEnabled, requirementsDue, defaultPayoutMethod (if applicable)
+
+For Clients (billing):
+- Clients can add/update:
+  - default payment method (card) via Stripe SetupIntent + Stripe UI
+  - billing address + invoice email
+- Store:
+  - stripeCustomerId, defaultPaymentMethodId, billingAddress fields, invoiceEmail
+
+For HR/Admin (company payout/billing config):
+- Admin manages platform billing settings (if needed) and invoice rules.
+
+UI pages:
+- Worker Settings → “Payouts”
+  - Connect/Update payout method
+  - Status indicator (verified/pending)
+- Client Settings → “Payment Methods”
+  - Add/replace card (Stripe UI)
+  - Set default
+  - View invoices
+- Profile → “Billing Details” (address, email)
+
+Endpoints (examples):
+- POST /billing/client/setup-intent
+- POST /billing/client/attach-payment-method
+- GET  /billing/client/payment-methods
+- POST /payouts/worker/connect/start
+- GET  /payouts/worker/connect/status
+- POST /payouts/worker/connect/refresh
+
+========================================================
+D) IMPLEMENTATION PLAN (PHASE 1 NOW)
+1) App-wide: “My Today” dashboard per role + notifications inbox + quick templates
+2) Photo requirement:
+   - upload + face-detection gate + manual review workflow
+3) Payments:
+   - Stripe integration (client payment methods via SetupIntent)
+   - Worker payouts via Stripe Connect (or Stripe-hosted flow)
+4) Add audit_log entries for photo approvals/rejections and billing changes
+
+Return:
+- A prioritized list of improvements (15–25) with impact/effort
+- Then implement Phase 1 end-to-end: migrations, APIs, UI screens, and tests
+- Ensure all changes are role-secure and production-safe

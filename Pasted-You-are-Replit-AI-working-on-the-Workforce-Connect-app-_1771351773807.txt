@@ -1,0 +1,165 @@
+You are Replit AI working on the Workforce Connect app.
+
+MISSION
+Make the system super intuitive, smart, and automated for HR + Workers + Clients, with ZERO paid AI APIs. Focus on:
+- Shift blast/broadcast reliability (it’s currently not happening properly)
+- Clear worker clock-in reasons + late clock-in workflow requiring a reason + HR approval/visibility
+- Instant “shift filled” updates for all other workers
+- Context-aware shift cards (states like Starts in 2h / Clock-in open / Late / Filled / Completed)
+- Automation engine (rules + scheduled checks) that feels “AI-like” but is deterministic and free
+
+NON-GOALS
+- Do NOT implement any paid AI assistant or any feature that requires paid AI credits.
+- Do NOT implement Stripe or face verification in this phase.
+
+PHASE 1 DELIVERABLES (IMPLEMENT END-TO-END)
+
+A) FIX + UPGRADE SHIFT BLAST (Broadcast Engine)
+1) Ensure broadcast works reliably:
+- When HR chooses “Broadcast” on a shift (or shift request), the system must:
+  - Compute eligible workers (active, role/skill match, not blocked, no conflicting assigned shift, region/radius match if available)
+  - Create shift_offers for those workers (pending)
+  - Immediately send push notifications to those workers with deep link to the offer screen
+- Add server logs + audit_log entries:
+  - “SHIFT_BROADCAST_STARTED”
+  - “SHIFT_OFFERS_CREATED” {count}
+  - “PUSH_SENT” {count}
+  - “SHIFT_BROADCAST_FAILED” {error}
+- Add a health/debug endpoint for HR admin: /admin/debug/broadcast/:shiftId returning counts of eligible/offers/push attempts.
+
+2) Wave broadcasting (automation):
+- Broadcast in waves to reduce noise and increase fill rate:
+  - Wave 1: top 20 ranked eligible workers (see Ranking section)
+  - If no acceptance after 10 minutes → Wave 2: next 50
+  - If still no acceptance after 10 minutes → Wave 3: all remaining eligible
+- Implement as scheduled job running every 1–5 minutes:
+  - Finds shifts in status “offered” with no acceptance and wave due
+  - Sends next wave offers + push
+- Must be idempotent: never re-create duplicate offers for same worker+shift.
+
+3) First-accept wins + fill notification:
+- When a worker ACCEPTS:
+  - Atomically assign shift.assignedWorkerId = workerId, shift.status = assigned
+  - Mark that offer accepted
+  - Mark all other pending offers as expired/cancelled
+  - Notify all other workers with pending offers: “Shift filled by another worker”
+  - Update their UI to show “FILLED” (no Accept button)
+  - Notify HR + Client: “Worker assigned: {Name}”
+- Add concurrency safety: if two accept at same time, only first succeeds; second gets “Already filled”.
+
+B) SMART CLOCK-IN (Clear Reasons + Late Workflow)
+1) Worker clock-in eligibility rules (deterministic):
+- Define config constants:
+  - earlyWindowMinutes (ex: 60)
+  - gracePeriodMinutes (ex: 10)
+  - lateThresholdMinutes (ex: 10 or 15)
+  - allowedRadiusMeters (ex: 250) OR if no GPS feature yet, skip distance check but keep structure.
+
+2) When worker taps “Clock In”:
+- If too early: show exact reason + countdown:
+  - “Too early. Clock-in opens in 47 minutes.”
+- If shift ended: “Shift already ended.”
+- If too far (if enabled): “You’re 312m away. Move closer to {Workplace}.”
+- If already checked in: “Already clocked in.”
+- If late beyond gracePeriod:
+  - Show modal requiring reason (dropdown + optional note):
+    - Traffic
+    - Transportation issue
+    - Emergency
+    - Other (requires text)
+  - Allow clock-in anyway BUT:
+    - Mark timesheet entry flaggedLate = true
+    - Store lateReason + lateNote
+    - Notify HR immediately: “Late clock-in: {Worker} {minutesLate}m. Reason: {reason}”
+    - Add audit_log event “LATE_CLOCKIN_REQUESTED”
+- If HR approval required (choose this approach):
+  - Option A (recommended for now): allow clock-in but flagged for HR review (no blocking)
+  - HR can later approve/deny/adjust time in Admin screen.
+
+3) Auto-missed shift detection (automation):
+- Scheduled job checks:
+  - If shift starts and worker not checked-in by X minutes (ex: 15):
+    - Push worker: “Your shift started 15 minutes ago. Are you on your way?”
+    - Buttons: “On my way” / “I have an issue”
+  - If still no check-in by Y minutes (ex: 30):
+    - Notify HR: “Possible no-show: {Worker}”
+    - Add audit_log “NO_SHOW_RISK”
+- Capture worker responses in shift_checkins table:
+  - statuses: on_my_way, issue_reported, checked_in, checked_out
+  - timestamps + optional note
+- If “I have an issue”:
+  - Require short reason + notify HR immediately.
+
+C) CONTEXT-AWARE SHIFT CARDS (Worker UI)
+- Update worker shift list cards to show computed status:
+  - “Starts in 2h”
+  - “Clock-in available” + prominent Clock In button (when within earlyWindow)
+  - “Late — explain” (if now > start + grace)
+  - “Filled” (if offer expired/cancelled because someone else accepted)
+  - “Assigned” (if worker accepted and assigned)
+  - “Completed”
+- Tapping a shift card navigates directly to the clock-in screen.
+- For offers:
+  - Show Accept + Decline
+  - Decline requires confirmation modal: “Are you sure you want to decline?”
+
+D) RANKING (Free “AI-like” Suggestions)
+- Add worker_score fields (or computed):
+  - acceptanceRate (last 30d)
+  - onTimeRate (last 30d)
+  - cancellationRate
+  - noShowCount
+  - distance (if location available)
+  - recentWorkload (to distribute fairly)
+- Create a ranking function:
+  - score = +onTimeRate*W1 +acceptanceRate*W2 -cancellationRate*W3 -noShowCount*W4 -distance*W5 -overlapPenalty
+- Use ranking for wave 1 selection and HR suggestion list.
+- Store score snapshots optionally for debugging.
+
+E) AUTOMATION ENGINE + AUDIT LOG
+1) Add audit_log table:
+- id, actorUserId (nullable for system), action, entityType, entityId, metadata JSON, createdAt
+- Log every automated action and key manual actions (broadcast, accept, assign, late clock-in, no-show risk).
+
+2) Add a simple automation scheduler:
+- Runs every 1–5 minutes
+- Tasks:
+  - wave broadcast escalation
+  - missed shift prompts (on my way / issue)
+  - upcoming reminders (T-2h, T-30m) OPTIONAL if time allows
+- Ensure idempotency: store notification keys so we don’t send duplicates.
+
+F) PUSH NOTIFICATIONS (Required)
+- Implement/verify push for:
+  1) New shift offer
+  2) Shift filled (to other workers)
+  3) Shift assigned (to HR/client/worker)
+  4) Missed shift prompt (“on my way”)
+  5) New message in chat threads
+- Each push must deep link to correct screen.
+
+DEBUGGING REQUIREMENT (Because blast is currently failing)
+- Add server-side logging around:
+  - eligibility calculation results
+  - offers created
+  - push send results
+- Add admin debug screen or endpoint to validate:
+  - eligible count
+  - offers pending/accepted/declined/expired
+  - last push attempts with status
+- Add “Test push to me” button for HR to verify push pipeline.
+
+ACCEPTANCE CRITERIA
+1) HR hits Broadcast → at least one eligible worker receives a push and sees the offer.
+2) Worker accepts → shift becomes assigned; all other workers see “Filled” and receive a push.
+3) Worker clock-in too early/too late/ended shows a specific reason, not a generic error.
+4) Late clock-in requires a reason and HR gets notified + audit log.
+5) Automated missed-shift prompt works and logs response.
+6) No paid AI features are used.
+
+IMPLEMENTATION NOTES
+- Prefer custom modals over Alert.alert across new/edited flows (mobile reliability).
+- Use safe transactional updates for accept flow to prevent double assignment.
+- If GPS isn’t implemented yet, structure distance checks behind a feature flag; do not block the rest of the work.
+
+Now: produce the implementation plan (DB migrations, API routes, UI changes, jobs), then implement Phase 1.

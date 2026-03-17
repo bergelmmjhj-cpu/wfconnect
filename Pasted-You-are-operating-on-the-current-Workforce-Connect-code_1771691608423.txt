@@ -1,0 +1,93 @@
+You are operating on the current Workforce Connect codebase.
+
+There are still DEMO / SEED / MOCK residues present in the system. These are likely interfering with production workflows (assignments, TITO logs, timesheets, SLA items).
+
+We need a controlled cleanup and isolation.
+
+========================
+PROBLEM
+========================
+The dashboard still shows demo artifacts (e.g., SLA Breach items, TITO Pending, test names, test workplaces).
+
+This suggests:
+- Seed/demo data still exists in production tables
+- Demo feature flags are not disabled
+- Mock services may still be wired into production endpoints
+- UI may be rendering static/demo state instead of live data
+
+This may be causing:
+- Recurring shifts not appearing
+- Offers not delivering
+- TITO logs not linking to real assignments
+- Timesheets not being generated properly
+
+========================
+REQUIRED ACTIONS
+========================
+
+1) Identify all demo/seed sources
+- Search for:
+  - seed.ts / seed.js
+  - mock data providers
+  - hardcoded arrays in frontend
+  - test fixtures loaded on app boot
+  - demo feature flags
+- Identify which environments auto-load demo data.
+
+2) Separate environments strictly
+- Ensure:
+  - dev environment uses seed/demo data
+  - staging/production does NOT auto-seed
+- Remove automatic seeding from app startup.
+
+3) Audit database for demo residue
+Run queries to identify:
+- Demo workplaces
+- Demo workers
+- Demo shift requests
+- Demo SLA breach records
+- Orphaned TITO logs
+- Orphaned assignments without real linkage
+
+Create a safe cleanup script that:
+- Removes demo-tagged records
+- Preserves real production data
+- Does NOT cascade-delete valid linked records
+
+4) Remove mock logic from production flows
+Ensure:
+- TITO endpoints use real DB writes
+- Offers endpoint uses real DB reads
+- Dashboard SLA items are dynamically computed
+- No static arrays are being rendered
+
+5) Verify Data Integrity After Cleanup
+After removing demo residue:
+
+Run full end-to-end test:
+- Create shift
+- Blast to workers
+- Worker receives offer
+- Worker accepts
+- Worker clocks in/out
+- Timesheet is generated
+- TITO logs appear
+- Dashboard reflects real data only
+
+========================
+CONSTRAINT
+========================
+Do NOT delete blindly.
+Tag demo records first (if not already tagged).
+Provide a list of tables touched before running cleanup.
+
+========================
+DELIVERABLE
+========================
+Provide:
+- List of demo-related files removed/modified
+- List of DB records cleaned (counts per table)
+- Confirmation that no mock data is loaded in production
+- Confirmation that all dashboards now reflect live data only
+
+This cleanup is necessary before continuing feature fixes.

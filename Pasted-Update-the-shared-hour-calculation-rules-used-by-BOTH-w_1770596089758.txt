@@ -1,0 +1,58 @@
+Update the shared hour-calculation rules used by BOTH weekly invoicing and bi-weekly payroll.
+
+New Break Deduction Rule + Quarter-hour Rounding
+
+Inputs (from titoLogs):
+- timeIn (datetime)
+- timeOut (datetime)
+- (optional) breakMinutes if it exists, BUT the policy below must still be applied.
+
+Policy (must be the source of truth):
+1) Compute rawMinutes = difference between timeOut and timeIn in minutes (timezone-aware; use America/Toronto for window filtering).
+2) If rawMinutes <= 0 or timeOut is null -> exclude from totals and flag as incomplete.
+3) Convert rawHours = rawMinutes / 60.
+
+4) Automatic break deduction rule:
+- If rawHours < 5.0 hours: NO deduction (deductionHours = 0)
+- If rawHours >= 5.0 hours: deduct 0.5 hours (30 minutes) (deductionHours = 0.5)
+Note: This is a fixed policy deduction (not dependent on a stored break field), unless we explicitly add a future setting.
+
+5) Net hours:
+- netHours = max(0, rawHours - deductionHours)
+
+6) Quarter-hour counting (rounding):
+- All counted hours must be in increments of 0.25 (i.e., .00, .25, .50, .75).
+- Implement netHoursRounded = floor(netHours * 4) / 4
+  (Always round DOWN to the nearest quarter to avoid overpaying/invoicing.)
+- Example requirement:
+  - 8:00 AM to 4:12 PM = 8h 12m = 8.20 rawHours
+  - rawHours >= 5, so deduct 0.5 => 7.70
+  - floor(7.70*4)/4 = floor(30.8)/4 = 30/4 = 7.50
+  If the business expects 7.75 for this example, then DO NOT use floor; instead use "nearest quarter":
+    netHoursRounded = round(netHours * 4) / 4
+  Please confirm which rounding mode is correct by matching the example below.
+
+IMPORTANT: Use the user-provided example as the acceptance test.
+Acceptance test:
+- 8:00am - 4:12pm must output 7.75 total hours.
+
+To satisfy that acceptance test, implement:
+- rawHours = 8.20
+- deduction = 0.5 => net = 7.70
+- quarter rounding must produce 7.75, which implies rounding to nearest quarter (not floor).
+Therefore set:
+- netHoursRounded = round(netHours * 4) / 4
+
+Edge cases:
+- Exactly 5:00 hours worked -> deduct 0.5 and then quarter-round.
+- Ensure negative results clamp to 0.
+- Apply the same function everywhere (preview + exports), no duplicate math.
+
+Implementation notes:
+- Create a single helper:
+  calculatePayableHours(timeIn, timeOut) -> {rawHours, deductionHours, netHours, netHoursRounded}
+- Use netHoursRounded for totals, exports, and any pay calculations.
+- Add unit tests for:
+  - 4:59 duration => no deduction
+  - 5:00 duration => -0.5
+  - 8:00–4:12 => 7.75 (must pass)

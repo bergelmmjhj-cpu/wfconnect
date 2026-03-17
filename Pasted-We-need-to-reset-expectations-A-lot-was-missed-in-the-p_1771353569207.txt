@@ -1,0 +1,71 @@
+We need to reset expectations.
+
+A lot was missed in the previous implementation and parts of the app are now dysfunctional. This cannot happen again.
+
+This time:
+
+1) DO NOT assume anything is working.
+2) DO NOT summarize.
+3) DO NOT say “already exists” without hard proof.
+4) DO NOT implement partial logic.
+
+We are fixing functionality first, not adding features.
+
+The app is currently dysfunctional in these areas:
+- Shift blast not reliably creating offers and/or sending pushes
+- Workers not consistently seeing when a shift is filled
+- Clock-in logic unclear or inconsistent
+- UI not updating correctly after accept/fill
+- End time handling inconsistent
+- Automation logic partially wired
+
+This time the process must be:
+
+STEP 1 — CODEBASE AUDIT (MANDATORY)
+Before touching anything:
+- List exact files and functions handling:
+  • Shift broadcast
+  • Offer creation
+  • Accept shift flow
+  • Assignment logic
+  • Push notifications
+  • Clock-in/out
+  • Shift card UI rendering
+- For each, explain current behavior in 3–5 lines max.
+- Identify concrete bugs or weak points.
+
+No implementation yet.
+
+STEP 2 — ROOT CAUSE IDENTIFICATION
+For each dysfunctional area:
+- What exactly is broken?
+- Why is it broken?
+- Where is the failure happening? (backend route, DB logic, UI state, push service, etc.)
+- What is the minimal fix?
+
+STEP 3 — FIX CORE WORKFLOW FIRST
+Only after audit:
+Fix the entire shift lifecycle end-to-end:
+
+Client request → HR broadcast → Offer creation → Push sent → Worker accepts → Others marked filled → Shift assigned → Clock-in → Late handling → Completion.
+
+This must work perfectly before adding wave logic, ranking, AI-like automation, etc.
+
+STEP 4 — VERIFICATION PROTOCOL
+After fixes:
+- Provide a manual test checklist (step-by-step).
+- Show example logs for broadcast.
+- Show example push payload.
+- Confirm DB state transitions.
+- Confirm UI states.
+
+No more “should work.”
+No more assumptions.
+No partial implementations.
+
+This is a stabilization sprint.
+
+Focus on reliability, correctness, and traceability.
+Once the core workflow is bulletproof, we can layer intelligence.
+
+Start with the audit.

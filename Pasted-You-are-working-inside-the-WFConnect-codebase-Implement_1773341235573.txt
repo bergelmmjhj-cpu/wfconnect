@@ -1,0 +1,210 @@
+You are working inside the WFConnect codebase. Implement the following features and fixes directly.
+
+SYSTEM TIMEZONE STANDARD
+
+The entire system must operate in Toronto time.
+
+Timezone:
+America/Toronto
+
+Never rely on server timezone.
+
+Create a centralized time utility:
+
+/server/utils/time.ts
+
+Functions:
+nowToronto()
+toToronto(date)
+formatToronto(date)
+
+Use Luxon:
+
+import { DateTime } from "luxon"
+
+export function nowToronto() {
+  return DateTime.now().setZone("America/Toronto")
+}
+
+export function toToronto(date) {
+  return DateTime.fromJSDate(new Date(date)).setZone("America/Toronto")
+}
+
+export function formatToronto(date) {
+  return toToronto(date).toFormat("yyyy-LL-dd HH:mm")
+}
+
+All scheduling, reminders, SMS, logs, CRM display, and mobile app display must use this utility.
+
+--------------------------------------------------
+
+REMINDER SYSTEM FIX
+
+Audit the entire reminder system.
+
+Current issues:
+• reminders sent at wrong time
+• reminders sent to wrong person
+• reminders not sent at all
+
+Fix the logic.
+
+Reminder flow:
+
+1. appointment_datetime stored in database
+2. convert to Toronto time
+3. calculate reminder time
+4. queue job
+5. send SMS to correct recipient
+
+Reminder recipient rules:
+
+Worker shift reminder:
+recipient = assigned_worker.phone
+
+Appointment reminder:
+recipient = appointment.contact_phone
+
+Management alerts:
+recipient = configured admin users only
+
+Never fallback to GM Lilee unless explicitly configured.
+
+If no valid recipient exists:
+log error and skip sending.
+
+--------------------------------------------------
+
+ADD REMINDER DELIVERY TRACKING
+
+Add reminder tracking fields:
+
+reminder_sent_at
+reminder_status
+reminder_attempts
+last_response_at
+conversation_state
+
+Log every send attempt.
+
+--------------------------------------------------
+
+CLAUDE MESSAGE FOLLOW-UP SYSTEM
+
+Allow Claude AI assistant to send conversational SMS messages.
+
+Goal:
+If Claude sends a message and there is **no response within 2 hours**, Claude should send a **human-like follow-up message automatically**.
+
+Implementation:
+
+Create service:
+
+/server/services/aiFollowupService.ts
+
+Flow:
+
+1. Claude sends message
+2. message logged
+3. wait 2 hours
+4. check if recipient replied
+5. if no reply → send follow-up message
+
+Database fields needed:
+
+ai_message_log
+id
+recipient_phone
+message
+sent_at
+response_received (boolean)
+response_received_at
+followup_sent (boolean)
+followup_sent_at
+
+--------------------------------------------------
+
+FOLLOW-UP LOGIC
+
+When Claude sends a message:
+
+insert record into ai_message_log
+
+Start a background check job.
+
+After 2 hours:
+
+SELECT message WHERE:
+response_received = false
+followup_sent = false
+sent_at < nowToronto() - 2 hours
+
+If match found:
+Claude sends a second SMS.
+
+Update:
+followup_sent = true
+followup_sent_at
+
+--------------------------------------------------
+
+HUMANLIKE FOLLOW-UP MESSAGES
+
+Claude should not sound robotic.
+
+Examples:
+
+Follow-up type 1:
+"Hi! Just checking in in case you missed my earlier message."
+
+Follow-up type 2:
+"Hey, just wanted to follow up regarding the appointment."
+
+Follow-up type 3:
+"Hi there — I sent a message earlier and wanted to see if you had a chance to look at it."
+
+Claude should rotate messages to avoid repetition.
+
+--------------------------------------------------
+
+STOP FOLLOW-UP IF USER RESPONDS
+
+If a response arrives from the recipient:
+
+update ai_message_log:
+
+response_received = true
+response_received_at = nowToronto()
+
+Cancel follow-up job.
+
+--------------------------------------------------
+
+LOGGING
+
+Add detailed logs:
+
+[AI MESSAGE]
+recipient
+message_id
+sent_at
+
+[FOLLOWUP CHECK]
+recipient
+hours_since_last_message
+
+[FOLLOWUP SENT]
+recipient
+followup_sent_at
+
+--------------------------------------------------
+
+ACCEPTANCE CRITERIA
+
+1. System uses Toronto time everywhere.
+2. Reminders send at correct time.
+3. Reminders go to correct recipient.
+4. Claude can send SMS messages.
+5. If no reply after 2 hours, Claude sends a human-like follow-up.
+6. Follow-up stops if recipient replies.
+7. All actions logged for debugging.

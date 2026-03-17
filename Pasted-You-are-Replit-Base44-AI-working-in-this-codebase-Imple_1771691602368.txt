@@ -1,0 +1,121 @@
+You are Replit/Base44 AI working in this codebase. Implement the following P0 fixes exactly. Do not change scope. Prioritize Timesheet/Hours integrity first.
+
+========================
+P0 GOAL (PAYROLL INTEGRITY)
+========================
+A shift cannot be considered “Completed” unless the backend has persisted:
+1) time_in + time_out (server time)
+2) total_hours
+3) a timesheet row linked to the shift assignment
+4) a TITO log record visible in the TITO Logs screen
+
+Right now workers can clock in/out but there are NO generated timesheets/logs/records. This is a financial integrity failure.
+
+========================
+P0 FIX 1: TITO MUST BE GATED (NO BYPASS)
+========================
+Problem:
+Workers can go to the TITO page and clock in/out without ever receiving/accepting a shift. There is no “assigned shift” prompt and nothing to accept.
+
+Required behavior:
+- Clock-in is allowed ONLY if there exists a ShiftAssignment for this worker AND status is ACCEPTED/CONFIRMED AND within allowed time window.
+- Clock-out is allowed ONLY if assignment is IN_PROGRESS (clocked in) and time_in exists.
+- If no accepted assignment exists, return 403 with message: "No active accepted shift to clock in."
+
+Implementation:
+- Add/repair status machine on ShiftAssignment:
+  ASSIGNED/OFFER_SENT -> ACCEPTED -> IN_PROGRESS -> COMPLETED
+- Update the clock-in/out endpoints to validate assignment status and ownership.
+
+========================
+P0 FIX 2: CLOCK-IN & CLOCK-OUT MUST BE IDEMPOTENT
+========================
+Problem:
+Clock-out returns “Already clocked out” as an error. Clock-in has no duplicate protection.
+
+Required behavior:
+- If already clocked in: return existing persisted clock-in payload (200) (do not error).
+- If already clocked out: return existing persisted clock-out + totals payload (200) (do not error).
+- Ensure duplicate taps / retries do not create duplicates.
+
+========================
+P0 FIX 3: CREATE/UPSERT TIMESHEET ON CLOCK-OUT (ATOMIC)
+========================
+Problem:
+No timesheet entry is created on clock-out. Timesheets are not linked to TITO/assignment. Workers have “Completed” but nothing exists.
+
+Required behavior on successful clock-out:
+Within ONE transaction:
+1) Persist time_out (server time)
+2) Compute total_hours = time_out - time_in
+3) Upsert timesheet row:
+   - unique key: (worker_id, shift_assignment_id)
+   - store time_in, time_out, total_hours, hourly_rate_used, multiplier, total_pay
+4) Create a TITO log record that the TITO Logs screen reads from
+
+Rules:
+- Server time is authoritative. Device time optional secondary field.
+- If timesheet upsert fails, rollback and do NOT mark shift completed.
+- Do not allow COMPLETED status without a timesheet row.
+
+Database constraints:
+- UNIQUE(worker_id, shift_assignment_id) on timesheets
+- CHECK(time_out > time_in)
+- NOT NULL for required fields once completed
+
+========================
+P0 FIX 4: TITO LOGS MUST SHOW RECORDS
+========================
+Problem:
+TITO Logs screen is empty even after successful clock in/out.
+
+Required:
+- Ensure the backend endpoint powering TITO Logs returns the persisted records.
+- Ensure clock-in/out writes records into the same table/collection the UI reads.
+- If there is a mismatch (UI reads table A, clock writes table B), unify them.
+
+========================
+P0 FIX 5: ADMIN “BLAST” TO ALL AVAILABLE WORKERS
+========================
+Problem:
+No option to broadcast/blast shift requests to all eligible/available workers.
+
+Required:
+- Add admin action “Blast/Broadcast”
+- Determine eligible workers (role + availability + distance/radius rules)
+- For each eligible worker create ShiftOffer record with status SENT
+- Trigger notification pipeline (push + in-app)
+
+========================
+P0 FIX 6: RECURRING SHIFTS MUST APPEAR TO WORKERS
+========================
+Problem:
+Recurring shifts created by admin do not show on worker side.
+
+Required:
+- Recurrence must generate concrete occurrences (shift instances) AND offers/assignments for each occurrence
+- Worker should see upcoming recurring shifts once accepted (or see offers to accept)
+
+========================
+P0 FIX 7: WORKER MUST RECEIVE OFFER/ASSIGNMENT PROMPT + ACCEPTANCE
+========================
+Problem:
+No prompt/notification for assigned shifts. Nothing to accept.
+
+Required:
+- On offer/assignment creation: create Notification record + push
+- Worker Offers screen must show pending offers and allow Accept/Decline
+- On Accept:
+  - set assignment status ACCEPTED
+  - cancel competing offers if first-accept-wins
+
+========================
+DELIVERABLES (MUST PROVIDE)
+========================
+1) List of files changed + migrations added
+2) End-to-end test evidence:
+   - Create shift -> blast -> worker receives offer -> accepts -> clocks in/out -> timesheet exists -> TITO Logs shows record
+3) Confirm idempotency:
+   - tapping clock-out twice returns same record, no error, no duplicates
+
+Start with FIX 3 (timesheet/hours) + FIX 1 (TITO gating) because payroll integrity is the highest priority.

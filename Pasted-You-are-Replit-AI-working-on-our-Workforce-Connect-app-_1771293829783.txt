@@ -1,0 +1,221 @@
+You are Replit AI working on our Workforce Connect app.
+
+MERGED MASTER REQUEST (Fixes + Automation + Scheduling UX + Safe Reset)
+Goal: Make HR assignment extremely easy, automate major workflows for HR/Client/Worker, fix recurring/no-end-date behavior, add weekly roster view, enforce strict delete permissions, add geofence “forgot to time-in” alerts, and add a SAFE trial reset to start clean.
+
+========================================================
+1) ROLES / PERMISSIONS (non-negotiable)
+- HR is the only role that assigns/confirms workers to shifts.
+- Clients can submit Shift Requests but cannot assign.
+- Workers can accept/decline shift offers only.
+- Admin has highest privilege and controls destructive actions (hard deletes, approvals).
+
+========================================================
+2) SMART ASSIGN + BROADCAST OFFERS (HR fast flow)
+A) Shift Request flow
+- Client submits Shift Request (may include requestedWorkerId or null).
+- HR opens request and sees “Smart Assign”:
+  1) Offer to specific worker (1 tap)
+  2) Broadcast to eligible workers (default if no requested worker)
+
+B) Broadcast behavior
+- Create shift_offers for eligible workers.
+- Workers receive PUSH notification with deep link to Offer screen.
+- Worker taps ACCEPT or DECLINE (Decline requires “Are you sure?” confirmation).
+- On first ACCEPT:
+  - Auto-assign shift to that worker (“first accept wins” for Phase 1).
+  - Auto-cancel/expire other pending offers; notify them “Shift filled”.
+  - Notify HR + Client “Worker assigned: {name}”.
+
+C) Eligibility filter (blast targets)
+- Active worker account
+- Skill/role match
+- Region/radius match (if available)
+- No conflict with assigned shifts
+- Not blocked by client/workplace
+
+D) Minimum real-time update
+- HR screen auto-refresh offer status (polling every 10–15s ok for Phase 1).
+
+========================================================
+3) PUSH NOTIFICATIONS (mandatory)
+Must send push notifications for:
+- New shift offer
+- Shift assigned/confirmed
+- Shift cancelled/updated
+- New messages (thread participants except sender)
+Deep link into: Offer detail / Shift detail / Chat thread.
+
+========================================================
+4) AUTOMATED REMINDERS + “ON MY WAY” + CHECK-IN/OUT
+Server scheduled job (every 5 minutes) + local/foreground prompts:
+- T-2h: “Shift in 2 hours. Are you on your way?” buttons: On my way / I have an issue
+- T-30m: reminder
+- At start: “Tap to Check-in”
+- At end: “Tap to Check-out”
+Store responses:
+- shift_checkins/status events (on_my_way, issue, checked_in, checked_out) + timestamps + note
+If “I have an issue” → collect reason → notify HR immediately.
+
+========================================================
+5) GEOFENCE: FORGOT TO TIME-IN (aggressive alert)
+Requirement:
+- If shift has started and worker has not checked in:
+  - If worker is within workplace geofence radius: alert worker strongly (push with sound/high priority + in-app modal + vibration when app in foreground).
+  - If not within radius: warn worker and notify HR “not on-site / not checked in”.
+Escalation:
+- T+10 min no check-in → notify HR
+- T+30 min → flag “no-show risk” + notify HR again
+Data:
+- workplace geofence (lat/lng/radiusMeters)
+- workerLastKnownLocation (update on app open / permitted background if available)
+
+========================================================
+6) SCHEDULING & RECURRENCE (fix no-end-date + delete issues)
+CRITICAL FIXES:
+- I still cannot delete scheduled shifts → implement reliable delete/cancel.
+- Recurring shifts with “no end date” are being listed as many rows (65+) → FIX: do not expand infinite series in list views.
+
+Model shifts properly:
+- shift_series (template/recurrence) + recurrence_exceptions (cancel/modify a date)
+- Do NOT pre-generate infinite occurrences.
+- Only expand occurrences inside a selected date range (week/month view).
+
+Recurrence requirements:
+- One-time shift OR recurring shift series
+- Frequency: daily/weekly/biweekly/monthly
+- Weekly: select days of week
+- Start date required
+- End options: end date OR after N occurrences OR “No end date”
+
+Delete/cancel actions (HR):
+- One-time shift: delete if not started and no timesheet; otherwise cancel.
+- Recurring series: HR must be able to:
+  1) Delete only this occurrence
+  2) Delete this and all future occurrences
+  3) Delete entire series
+If occurrence has check-in/out, prevent hard delete; do cancel + audit log.
+
+APIs:
+- DELETE /shift/:id (one-time delete if allowed)
+- POST /shift/:id/cancel
+- DELETE /shift-series/:id
+- POST /shift-series/:id/delete-occurrence { date }
+- POST /shift-series/:id/delete-future { fromDate }
+- POST /shift-series/:id/cancel-occurrence { date, reason? }
+
+UI changes:
+- Workplace “Scheduled Shifts” should show recurring as ONE “Series Card”:
+  - days, time, worker, start date, end=No end
+  - actions: Edit series, View week, Exceptions, Delete series
+- Only show expanded occurrences inside Week/Month roster views.
+
+========================================================
+7) WEEKLY ROSTER VIEW (like the spreadsheet picture)
+Need an easy way to see “who goes to the location for a certain week” without scrolling.
+
+Implement Workplace → “Roster” tab:
+- Week selector (Mon–Sun) with Prev/Next
+- Grid view:
+  - Columns = days
+  - Rows = shift blocks (e.g., 8–4, 11–7, 10–6)
+  - Cells show worker avatar + name + role label
+- Filters: role, worker, status
+- Data source: expand shift_series + exceptions ONLY for that week
+- Optional export: “Export week to PDF/image” (Phase 2 ok)
+
+========================================================
+8) DELETE WORKERS / WORKPLACE / CLIENT (strict precautions)
+Rules:
+- Admin only can hard delete Workplaces and Clients.
+- HR deleting a Client must become a “Deletion Request” requiring Admin approval.
+- HR can delete/archive a Worker without Admin approval, but must be safe.
+
+Implement SOFT DELETE (recommended default):
+- workers: active/suspended/archived
+- clients/workplaces: active/archived
+
+Deletion workflow:
+- deletion_requests table:
+  - entityType (client/workplace/worker), entityId, requestedBy, reason,
+    status (pending/approved/rejected), reviewedBy, reviewedAt
+- HR “Delete Client” → creates pending request; Admin approves/rejects in Admin UI.
+- HR “Archive Worker”:
+  - If upcoming shifts exist → require “Reassign” or “Cancel shifts” before archiving
+- Always keep historical shifts/timesheets; do not orphan data.
+
+Add audit_log for all deletion/cancel/archive actions.
+
+========================================================
+9) MORE AUTOMATION SUGGESTIONS (then implement top ROI)
+Provide a prioritized list of automation ideas across:
+- Scheduling/assignment, messaging, attendance/timesheets, payroll/invoicing,
+  compliance/onboarding, quality/issues, admin/reporting
+For top 10 ideas include: trigger, actions, data needed, UI changes, edge cases.
+Then implement Phase 1 automation items with best ROI:
+- Worker ranking suggestions for HR (distance, reliability, cancellations/no-shows, fairness)
+- Wave broadcasting escalation (top 20 → after 10 min expand → etc.)
+- Auto templates for event messages (request submitted, assigned, cancelled, etc.)
+- Daily HR digest (unfilled shifts, upcoming today, late/no check-in, message backlog)
+
+========================================================
+10) SAFE “RESET TRIAL DATA” (start clean, no bypass/backdoor)
+I’m still in trial/testing and don’t have much data, but I want to start clean SAFELY.
+
+Implement Admin-only “Reset Trial Data”:
+- NO bypass/backdoor; server enforces admin role.
+- Disabled unless ENV ENABLE_TRIAL_RESET=true.
+- Two-step confirmation:
+  - Re-auth (password) OR one-time code
+  - Type exactly: RESET TRIAL
+- DRY RUN endpoint to preview counts per table.
+- Transaction + dependency-ordered deletes to avoid FK issues.
+- Must preserve the currently logged-in admin account (do not lock us out).
+- Must write audit_log with counts deleted + adminId + timestamp.
+
+Default deletes (toggle list in UI):
+- workers + worker profiles + applications + availability
+- HR details/profiles (but keep admin user)
+- clients + client users
+- workplaces + gps/geofence
+- shift_requests + shifts + shift_series + offers + exceptions
+- messages/threads + notifications
+- timesheets/check-ins (toggle)
+After reset optional seed (toggle):
+- 1 workplace with geofence
+- 1 client user
+- 2 workers
+- 1 recurring series (Mon–Sat)
+
+UI:
+Admin Settings → Danger Zone:
+- “Preview Reset (Dry Run)”
+- “Reset Trial Data”
+
+Endpoints:
+- POST /admin/trial-reset/dry-run
+- POST /admin/trial-reset/execute
+
+========================================================
+DELIVERABLES
+- DB migrations (shift_series, recurrence_exceptions, shift_offers, shift_requests, shift_checkins, deletion_requests, audit_log, notifications tables/fields as needed)
+- Updated APIs (assignment/offers/accept/decline/messages pushes/delete/cancel/series ops/reset)
+- UI updates:
+  - HR Smart Assign + Broadcast
+  - Worker Offers + Accept/Decline confirmations
+  - Workplace shows Series Cards (no infinite listing)
+  - Week Roster grid view
+  - Admin deletion approvals
+  - Admin trial reset
+- Tests / sanity checks:
+  - no-end-date series does not create infinite shift rows
+  - shift deletion/cancel works (occurrence/future/series)
+  - non-admin blocked from reset + deletes
+  - forgot time-in alerts trigger correctly
+
+Implement Phase 1 now focusing on:
+1) Fix recurring storage/display (series + exceptions) + shift deletion/cancel
+2) Smart assign + broadcast + accept/decline + push
+3) Week roster view
+4) Safe trial reset
+Then proceed with other automation improvements.

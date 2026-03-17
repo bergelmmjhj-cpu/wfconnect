@@ -1,0 +1,51 @@
+We confirmed the actual issue:
+
+Best Western Plus Muskoka Inn appears in the mobile app workplaces, but it does NOT appear in the CRM workplaces board.
+
+So the mobile app and CRM are not synchronized. I need them unified.
+
+Goal:
+Make Oscar, the mobile app, and the CRM board use the same workplace source of truth, or build a reliable sync if a single shared table is not possible.
+
+Required outcome:
+- If a workplace is created by Oscar, it must appear in both:
+  1. mobile app workplaces
+  2. CRM workplaces board
+- If a workplace is edited in either system, the other system must reflect the change
+- Geocoding fields (latitude, longitude, geofence radius) must stay consistent
+- Duplicate workplace creation must be prevented
+
+Tasks:
+1. Identify exactly which table/API the mobile app uses for workplaces
+2. Identify exactly which table/API the CRM board uses for workplaces
+3. Compare schemas and data flow
+4. Refactor so both systems use one shared workplaces table if possible
+5. If not possible, implement a two-way synchronization layer with stable mapping IDs
+
+Implementation requirements:
+- Add a canonical workplace ID shared across systems
+- Ensure create_workplace writes to the canonical source
+- Ensure CRM workplace list reads from the same source, or from synced records
+- Ensure updates/deletes propagate correctly
+- Preserve geocoding fields:
+  - latitude
+  - longitude
+  - geofence radius
+- Add logging for workplace create/update/sync actions
+- Add duplicate detection by normalized name + address
+- Add backfill/migration script if needed to merge existing workplace records
+
+Important:
+Right now Oscar should never claim a workplace is fully created unless it exists in both the mobile app and the CRM board, or unless the response clearly says:
+“Created in mobile app only; CRM sync pending.”
+
+Deliverables:
+- architecture summary
+- tables/endpoints involved
+- files changed
+- migration steps
+- how sync works
+- test cases proving:
+  - create in Oscar -> appears in mobile app and CRM
+  - update in CRM -> reflected in mobile app
+  - no duplicates created

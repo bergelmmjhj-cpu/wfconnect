@@ -1,0 +1,53 @@
+Replit AI — update the app’s error handling so users never see raw HTTP codes (401/500/etc) or JSON like {"error":"..."}.
+
+GOAL
+- Replace all technical error outputs with clear, human-friendly messages.
+- Standardize errors across the whole app (login, forms, API calls, etc.).
+- Keep detailed error info only in console logs for developers (not shown to users).
+
+REQUIREMENTS
+1) Create a central function (e.g., utils/errorMessages.ts or utils/errorHandler.js) that:
+   - Accepts an error object from fetch/axios/supabase/etc.
+   - Extracts HTTP status code + server message if available.
+   - Returns a user-friendly string (and optionally a short title).
+   - Never returns raw codes, stack traces, or JSON to the UI.
+
+2) Replace all places in the UI where we currently display:
+   - `error.message` directly
+   - `response.data` / raw JSON
+   - `status: 401` text
+   - Any toast/banner that prints the backend payload
+   with the output from the centralized error handler.
+
+3) For LOGIN specifically:
+   - If status is 401 OR message contains “Invalid email or password”
+     show: “We couldn’t sign you in. Please check your email and password and try again.”
+     Optional helper: “Make sure Caps Lock is off.”
+
+4) Add a mapping for common statuses:
+   - 400: “Something went wrong. Please try again.”
+   - 401: “We couldn’t sign you in. Please check your details and try again.”
+   - 401 (expired token / session): “Your session has expired. Please sign in again.”
+   - 403: “You don’t have permission to access this feature.”
+   - 404: “We couldn’t find what you’re looking for.”
+   - 409: “This already exists. Try a different value.”
+   - 422 (validation): “Please check the highlighted fields and try again.”
+   - 429: “Too many attempts. Please wait a moment and try again.”
+   - 500: “Something went wrong on our end. Please try again later.”
+   - 502/503: “Service is temporarily unavailable. Please try again shortly.”
+   - Network/offline: “No internet connection. Please check your connection.”
+   - Timeout: “This is taking longer than expected. Please retry.”
+
+5) UI behavior:
+   - Show these messages in the existing toast/banner component.
+   - Do NOT include “401”, “500”, or “Error:” prefix in user-facing text.
+   - Keep the UI message short (one sentence). If a second line is supported, use it only for helpful tips.
+
+6) Developer logging:
+   - `console.error()` should still log the full error object, status code, and raw backend message for debugging.
+   - But the user sees only the friendly message.
+
+DELIVERABLES
+- New centralized error handler utility file.
+- Updated login screen + other API call sites to use it.
+- Quick test: trigger a 401 login failure and confirm the UI shows the friendly message (not “401” or JSON).

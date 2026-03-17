@@ -1,0 +1,569 @@
+REPLIT / BASE44 — P0 FIX REQUEST (Clock In/Out, Timesheet, Offers/Notifications, Reload Loop, Shift Offers Spinner)
+
+Severity: P0 (production broken for workers)
+Symptoms: Workers can’t reliably clock in/out, timesheet errors occur even after clocking, offers/requests don’t notify workers, app reloads/bounces, and Shift Offers screen gets stuck with spinner / blank (see screenshot).
+
+1) Clock In / Clock Out is unreliable (TITO broken)
+Issues observed
+
+Workers struggle to complete time-in/time-out.
+
+Flow is inconsistent (sometimes works, sometimes fails, unclear UI state).
+
+Required fixes (Backend)
+
+Enforce a strict state machine on ShiftAssignment:
+
+ASSIGNED -> OFFER_SENT -> ACCEPTED -> IN_PROGRESS (clocked in) -> COMPLETED (clocked out)
+
+Add idempotent endpoints:
+
+POST /shifts/:assignmentId/clock-in
+
+POST /shifts/:assignmentId/clock-out
+
+Idempotency rules:
+
+If already clocked-in, return existing clock-in info (do not error).
+
+If already clocked-out, return completed info (do not error).
+
+Validation:
+
+Only allow clock-in if status = ACCEPTED and not clocked-in.
+
+Only allow clock-out if status = IN_PROGRESS and time_in exists.
+
+Write times using server time as source of truth. Store device time separately if needed.
+
+Required fixes (Mobile/UI)
+
+Make clock buttons disabled with clear message when not allowed.
+
+After clock-in/out, immediately refresh assignment data and show confirmation.
+
+2) Timesheet error after successful clock in/out
+Issues observed
+
+Even when clock in/out works, timesheet shows error / does not generate properly.
+
+Required fixes
+
+Define a single “source of truth” for timesheet creation:
+
+Timesheet row must be created/updated on clock-out OR on admin approval (pick one and be consistent).
+
+Implement DB constraints:
+
+Unique key: (worker_id, shift_assignment_id) to prevent duplicates.
+
+Implement atomic transaction:
+
+On successful clock-out:
+
+update assignment time_out
+
+compute hours
+
+upsert timesheet row
+
+return full timesheet payload
+
+Add server-side logs for failures:
+
+log assignmentId, workerId, time_in/out, error stack
+
+3) No notifications for broadcast offers / direct offers (workers never know)
+Issues observed
+
+Workers are not receiving:
+
+broadcast shift offers
+
+direct offers
+
+acceptance-required requests
+
+Required fixes (System)
+
+Create a single Notification pipeline:
+
+Event triggers: OFFER_SENT, OFFER_CANCELLED, OFFER_ACCEPTED, SHIFT_REMINDER, CLOCK_IN_REMINDER, CLOCK_OUT_REMINDER
+
+When an offer is created:
+
+write Offer record + status SENT
+
+create Notification record
+
+send push (FCM/APNs) + in-app badge
+
+Verify push token registration:
+
+ensure worker device token is saved and refreshed on login
+
+Add delivery tracking:
+
+notification.status = queued/sent/delivered/failed
+
+log failures and reason
+
+Required fixes (Mobile/UI)
+
+Add in-app “Offers” badge count
+
+Add “Messages/Notifications” feed so worker can see offers even if push fails
+
+4) Offers/Assignment acceptance flow is missing or not enforced
+Issues observed
+
+Workers are not prompted to accept offers.
+
+The system may be assigning shifts without explicit acceptance.
+
+Required fixes
+
+Offers must require explicit action:
+
+Offer.status: SENT -> ACCEPTED or DECLINED or EXPIRED
+
+On acceptance:
+
+create/update ShiftAssignment.status = ACCEPTED
+
+cancel competing offers for same slot (first-accept-wins)
+
+notify admin + other workers “shift filled”
+
+On decline/expire:
+
+re-broadcast / next wave
+
+5) App “bounces to reload” (reload loop / navigation resets)
+Issues observed
+
+App randomly reloads/bounces while navigating.
+
+Switching tabs/pages triggers re-fetch loops.
+
+Required fixes (Mobile/App state)
+
+Fix auth/session refresh loop:
+
+If API returns 401 once, refresh token once; if fails, logout (no infinite retry).
+
+Add request dedupe + throttling:
+
+Prevent same screen from re-calling the same API repeatedly on re-render.
+
+Ensure navigation state persists:
+
+Do not reset navigator on minor state changes.
+
+Add global error boundary:
+
+Show error UI instead of hard reload.
+
+Required fixes (Backend/API)
+
+Avoid returning malformed JSON or 500 loops that cause client retries.
+
+Add stable pagination/response schema so UI doesn’t crash on missing fields.
+
+6) Shift Offers screen stuck (infinite spinner / blank screen)
+Issues observed
+
+“Shift Offers” shows spinner forever and stays blank (see screenshot).
+
+Indicates API fetch never resolves or UI is stuck in loading=true.
+
+Required fixes
+
+Add hard timeout + error state:
+
+If offers API > 10s: show “Couldn’t load offers. Tap to retry.”
+
+Ensure offers endpoint returns quickly and safely:
+
+GET /offers?workerId=... must always return [] not null
+
+Fix UI state handling:
+
+On error: set loading=false and show retry
+
+On success: set loading=false and render empty state if none
+
+7) Data consistency checks (prevents future “ghost” failures)
+Required fixes
+
+Add DB-level constraints:
+
+One active assignment per worker per shift time window (if applicable)
+
+Timesheet unique constraint
+
+Offer uniqueness (offerId)
+
+Add audit logging:
+
+log every status change of assignment and offer, with timestamps and actor
+
+Add admin debug screen:
+
+show offer/assignment/tito status timeline per worker per shift
+
+8) What I need delivered (definition of done)
+
+Worker receives an offer (push + in-app) within seconds of being sent.
+
+Worker can accept offer; assignment moves to ACCEPTED.
+
+Worker can clock in and clock out reliably (idempotent, no duplicates).
+
+Timesheet is created/updated correctly after clock-out (no errors).
+
+Offers screen never spins forever; has empty + error + retry states.
+
+App stops reloading/bouncing; navigation is stable.
+
+Provide logs/trace IDs for:
+
+offer sent
+
+offer accepted
+
+clock in
+
+clock out
+
+timesheet upsert
+
+9) Immediate debugging steps you must run (and report back)
+
+Check API logs for the Offers endpoint (timeouts/500s)
+
+Confirm worker device push tokens exist and are current
+
+Inspect any infinite retry loops on the client (network inspector)
+
+Verify timesheet upsert transaction logic and constraints
+
+Reproduce on a worker test account and record screen + logs
+
+If you want, paste the errors/log output from Replit (offers endpoint, clock-in/out endpoint, and timesheet upsert) and I’ll tell you exactly what’s broken based on the log patterns.
+
+Also, there is no history of shift requests sent, even cancelled
+
+Add this as an additional P0 item to your Replit/Base44 ticket (copy-paste):
+
+P0 — Missing Shift Request / Offer History (including cancelled)
+Issue
+
+There is no history/audit trail of shift requests/offers that were sent to workers — even cancelled ones don’t appear anywhere (worker side and likely admin side).
+
+Expected
+
+Both admin and workers can view a timeline/history of:
+
+Broadcast shift offers sent
+
+Direct offers sent
+
+Accepted / Declined / Expired offers
+
+Cancelled offers (with reason + who cancelled + timestamp)
+
+Even if an offer/request is cancelled, it must remain visible in history with status CANCELLED.
+
+Actual
+
+No sent history is displayed; cancelled offers vanish completely.
+
+Required Fix (Data Model + Backend)
+
+Never delete offers/requests. Use status updates instead.
+
+Offer statuses must include: SENT, ACCEPTED, DECLINED, EXPIRED, CANCELLED
+
+Add audit fields on Offer/Request records:
+
+created_at, updated_at
+
+cancelled_at, cancelled_by, cancel_reason
+
+Ensure cancellation logic does:
+
+UPDATE offer SET status='CANCELLED', cancelled_at=NOW(), cancelled_by=?, cancel_reason=?
+
+(Do not hard delete.)
+
+Add history endpoints:
+
+Worker: GET /offers/history?workerId=...&range=... (returns all statuses including CANCELLED)
+
+Admin: GET /shift-requests/:id/offers (all offers + status timeline)
+
+Required Fix (UI)
+
+Add History tab or filter:
+
+Filters: All, Active, Accepted, Declined, Expired, Cancelled
+
+Provide clear empty state: “No offers yet.”
+
+For cancelled entries show: “Cancelled” + timestamp + optional reason.
+
+Definition of Done
+
+If an admin sends an offer then cancels it, the worker still sees it under history as Cancelled.
+
+Admin can see a complete list of all offers sent per ShiftRequest with final states and timestamps.
+
+imphasize the importance of timesheet/hours. this is the most crucial part
+
+Copy-paste this to Replit/Base44. This must be treated as highest priority (P0).
+
+🚨 CRITICAL: Timesheet & Hours Integrity Is NON-NEGOTIABLE (Payroll Risk)
+
+This is the most crucial component of the entire system.
+
+If timesheets or hours are wrong:
+
+Workers are underpaid or overpaid
+
+Payroll becomes legally exposed
+
+Trust in the platform collapses
+
+Admin cannot reconcile billing
+
+Clients may dispute invoices
+
+This is not a UI issue. This is a core financial integrity issue.
+
+Required: Timesheet & Hours Must Be Bulletproof
+1️⃣ Single Source of Truth for Hours
+
+There must be ONE authoritative calculation source.
+
+Rules:
+
+Hours must be derived from:
+approved_time_out - approved_time_in
+
+Calculation must be server-side only.
+
+Never trust frontend/device time for payroll.
+
+Store:
+
+time_in_server
+
+time_out_server
+
+total_hours
+
+hourly_rate_used
+
+rate_multiplier_used
+
+total_pay
+
+No derived value should exist only in UI.
+
+2️⃣ Timesheet Creation Logic Must Be Deterministic
+
+Define when timesheet is created:
+
+Choose ONE model:
+
+Option A: Create/Update timesheet immediately on clock-out
+
+Option B: Create/Update timesheet only after admin approval
+
+But it must:
+
+Be consistent
+
+Use atomic transaction
+
+Never partially update
+
+Implementation requirement:
+
+BEGIN TRANSACTION
+  update shift_assignment
+  calculate hours
+  upsert timesheet row
+COMMIT
+
+If any step fails → rollback everything.
+
+3️⃣ Enforce Database Constraints (Prevent Corruption)
+
+Add hard DB protections:
+
+Unique constraint:
+(worker_id, shift_assignment_id)
+
+NOT NULL:
+time_in and time_out once completed
+
+Constraint:
+time_out > time_in
+
+Prevent duplicate timesheet rows.
+
+We must eliminate:
+
+Double timesheets
+
+Missing timesheets
+
+Negative hours
+
+0-hour shifts (unless explicitly valid)
+
+4️⃣ Edge Case Handling (Must Be Covered)
+
+Late clock-in
+
+Early clock-out
+
+Missing clock-out
+
+GPS failure
+
+Admin manual edits
+
+Worker edits
+
+Cancelled shift after partial clock-in
+
+For each case:
+
+Define clear behavior
+
+Log change
+
+Record who modified
+
+Store previous values (audit trail)
+
+5️⃣ Audit Logging Is Mandatory
+
+Every change must be traceable:
+
+Log:
+
+Who clocked in
+
+Who clocked out
+
+Who edited times
+
+Who approved/rejected
+
+When changes occurred
+
+Previous values
+
+If payroll is questioned, we must reconstruct the entire timeline.
+
+6️⃣ No Silent Failures
+
+If timesheet generation fails:
+
+Return explicit error
+
+Log stack trace
+
+Notify admin
+
+Do NOT allow shift to show as “completed” without timesheet entry
+
+Silent failures are unacceptable.
+
+7️⃣ Admin View Must Show:
+
+For each shift:
+
+Assignment status
+
+Time in/out
+
+Calculated hours
+
+Rate used
+
+Multiplier
+
+Total pay
+
+Approval status
+
+Audit timeline
+
+Admin must be able to verify in 10 seconds.
+
+8️⃣ Worker View Must Show:
+
+Time in
+
+Time out
+
+Total hours worked
+
+Rate used
+
+Status (Pending / Approved / Rejected)
+
+Clear indication if under review
+
+No ambiguity.
+
+Definition of Done
+
+We are not “fixed” until:
+
+Every completed shift produces exactly ONE accurate timesheet.
+
+Hours are always correct (validated by test cases).
+
+No duplicate or missing records.
+
+Admin can reconcile payroll without manual corrections.
+
+System handles edge cases without breaking data integrity.
+
+Immediate Action Required
+
+Run:
+
+Audit current timesheet table for:
+
+duplicates
+
+null time_out
+
+negative hours
+
+missing rows for completed shifts
+
+Add unit tests for:
+
+normal shift
+
+late clock-in
+
+early clock-out
+
+cancelled shift
+
+approval flow
+
+This is not a minor bug.
+
+This is payroll infrastructure.
+
+Treat this as the core of the system and stabilize it before adding any new features.

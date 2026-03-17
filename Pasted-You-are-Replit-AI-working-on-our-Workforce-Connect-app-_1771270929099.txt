@@ -1,0 +1,151 @@
+You are Replit AI working on our Workforce Connect app.
+
+GOAL
+HR is the only role that assigns workers, but the process must be “one minute or less” for HR. If a client requests a shift without a specific worker, the system should automatically notify all eligible workers (blast). Workers can Accept/Decline in-app (and via push deep link). Add push notifications for messages + shift requests. Add automated reminders (confirm on-the-way, check-in, etc.).
+
+ROLES & PERMISSIONS
+- Only HR can create shifts and assign/confirm a worker.
+- Clients can submit “Shift Requests” but cannot assign.
+- Workers can Accept/Decline offers.
+
+DATA MODEL (add/adjust)
+1) shift_requests
+- id, clientId, workplaceId, roleType (HK/FD/etc), date, startTime, endTime, notes, requestedWorkerId (nullable),
+- status: draft | submitted | offered | filled | cancelled | expired
+- createdAt
+
+2) shifts
+- id, requestId (nullable), workplaceId, roleType, date, startTime, endTime, notes
+- status: open | offered | assigned | completed | cancelled
+- assignedWorkerId (nullable)
+- createdAt
+
+3) shift_offers
+- id, shiftId, workerId
+- status: pending | accepted | declined | expired | cancelled
+- offeredAt, respondedAt
+- unique constraint (shiftId, workerId)
+
+4) notifications
+- id, userId, type, title, body, deepLink, readAt, createdAt, metadata JSON
+
+5) message_threads + messages (if not already)
+- ensure we can trigger push on new message for recipients
+
+ELIGIBILITY FILTER (blast targets)
+- Only workers with:
+  - active account
+  - correct roleType/skills for shift
+  - location/region match OR within radius of workplace (use stored worker location preference if available)
+  - availability not conflicting with existing assigned shift
+  - not “blocked” by this workplace/client
+- If no availability feature exists, implement “basic conflict check” against assigned shifts.
+
+HR UX: “SMART ASSIGN” (fast flow)
+A) From a Shift Request (preferred)
+- HR opens request -> button “Smart Assign”
+- HR can choose:
+  1) Assign specific worker (search + quick pick)
+  2) Broadcast to eligible workers (default if no requestedWorkerId)
+- If requestedWorkerId exists:
+  - HR sees “Requested: Worker X” with 1-tap “Offer to Worker X” + optional “Also broadcast to others”
+
+B) Broadcast mode
+- On confirm, create shift_offers for all eligible workers (or top N first, configurable)
+- Immediately send push notification to all those workers with Accept/Decline actions (or deep link to offer screen).
+- HR sees live counters: Pending / Accepted / Declined
+- When first worker accepts:
+  - Auto-reserve/assign to first accept (configurable: “first accept wins”)
+  - Immediately cancel/expire all other pending offers for that shift and notify them “Shift filled”
+  - Notify HR + Client “Worker assigned: Name”
+- HR override: Allow HR to pick from accepted workers if multiple accept within short window:
+  - Implement “hold window” option (e.g., 30–60 seconds) OR simplest: first accept wins.
+  - Choose simplest now: first accept wins.
+
+Worker UX: Offer Card
+- Show shift details + workplace + pay info (if stored) + notes
+- Buttons:
+  - ACCEPT (one tap) -> status accepted; if shift already filled, show “Already filled”
+  - DECLINE -> confirmation modal “Are you sure you want to decline?” then set declined
+- After accept, show “You’re assigned” and add to worker’s Upcoming Shifts list.
+
+PUSH NOTIFICATIONS (mandatory)
+1) Shift Offer
+- Title: “Shift available”
+- Body: “{Date} {Start–End} at {Workplace}. Tap to accept.”
+- Deep link to offer details screen
+2) Shift Assigned/Confirmed
+- To worker: “You’re assigned: {Date}…”
+- To HR + Client: “Assigned: {WorkerName}”
+3) Shift Cancelled/Updated
+- Notify assigned worker + HR + client
+4) Messages
+- Push on new message to thread participants (except sender)
+- Deep link to the chat thread
+
+AUTOMATED REMINDERS & STATUS PROMPTS
+Implement a small scheduler/cron-like system on backend (or queued jobs) that triggers notifications based on shift start time in the user’s timezone:
+- T-24h (optional): “Reminder: You’re scheduled tomorrow… Confirm?”
+- T-2h: “Shift in 2 hours. Are you on your way?”
+  - Provide buttons: “On my way” / “I have an issue”
+- T-30m: “Shift starts in 30 minutes. Please be ready.”
+- At start time: “Tap to Check-in”
+- At end time: “Tap to Check-out”
+Store responses:
+- shift_checkins table: shiftId, workerId, status (on_my_way / issue / checked_in / checked_out), timestamp, note
+
+If worker taps “I have an issue”:
+- Prompt for short reason and notify HR immediately.
+
+REAL-TIME UPDATES (minimum)
+- HR dashboard should auto-refresh offers/acceptances without manual reload.
+- Implement either:
+  a) polling every 10–15s for offer status updates, OR
+  b) WebSocket events (preferred if already present)
+Choose quickest reliable option now: polling + invalidate queries; optionally add WebSocket later.
+
+FAILSAFE RULES
+- A worker cannot accept if:
+  - offer expired
+  - shift already assigned
+  - worker now conflicts with another assigned shift
+- If broadcast finds 0 eligible workers:
+  - show HR “No eligible workers found” + suggestions (expand radius, remove role filter, edit time)
+
+HR DASHBOARD IMPROVEMENTS
+- One screen: Requests + Open Shifts
+- Each request row has quick actions:
+  - “Assign” (opens smart assign)
+  - “Broadcast”
+  - “Cancel”
+- Add filters: date, workplace, status
+- Add “Copy last week schedule” (optional stretch)
+
+DELIVERABLES
+- DB migrations for new tables/fields + indexes + constraints
+- API endpoints:
+  - POST /shift-requests (client)
+  - POST /shift-requests/:id/submit
+  - POST /shift-requests/:id/smart-assign (specific worker or broadcast)
+  - POST /shift-offers/:id/accept
+  - POST /shift-offers/:id/decline
+  - GET /shifts/:id/offers (HR view)
+  - POST /shifts/:id/cancel
+  - POST /shifts/:id/checkin-status (worker on_my_way/issue/checkin/checkout)
+  - Messages push hook
+- Frontend screens:
+  - HR: Request detail + Smart Assign modal
+  - Worker: Offers list + Offer detail
+  - Notifications deep linking
+- Push notification integration:
+  - Ensure pushes send for offers/messages/updates
+- Automated reminder job:
+  - run every 5 minutes; find upcoming shifts and send due reminders; ensure idempotency (don’t double send)
+
+PRIORITY ORDER
+1) Smart Assign + Broadcast offers + Accept/Decline + auto-assign to first accept
+2) Push notifications for offers + messages
+3) Automated reminders (on my way, check-in/out)
+4) HR dashboard polish & filters
+
+Implement this end-to-end with clean UI, minimal taps, and clear statuses.

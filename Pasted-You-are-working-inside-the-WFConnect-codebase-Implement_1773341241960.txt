@@ -1,0 +1,287 @@
+You are working inside the WFConnect codebase. Implement a full applicant application portal for WFConnect.
+
+GOAL
+
+Create a clean, mobile-friendly applicant form at:
+
+apply.wfconnect.org
+
+This form must allow applicants to submit their information and upload required documents, while making it very easy for staff to review and download files from the CRM/admin side.
+
+--------------------------------------------------
+SYSTEM RULES
+
+- Entire system uses Toronto time: America/Toronto
+- Do not rely on server local timezone
+- Validate all inputs on both frontend and backend
+- Store uploads securely
+- Make admin access to files easy with one-click download
+- Keep structure scalable for future workflow steps
+
+--------------------------------------------------
+PART 1 — APPLICANT FORM
+
+Create a public applicant page for apply.wfconnect.org
+
+Required fields:
+1. Full Name
+2. Address
+3. Phone Number
+4. What position they are applying for
+5. Where they saw the job posting
+6. Upload Photo
+7. Upload Resume
+
+Form requirements:
+- professional and simple UI
+- mobile friendly
+- clean spacing and large tap targets
+- clear required-field indicators
+- human-readable validation errors
+- disable submit while uploading/submitting
+- success state after submission
+- prevent duplicate accidental submits
+
+--------------------------------------------------
+PART 2 — CANADA-ONLY ADDRESS AUTOFILL
+
+The address field must support autocomplete / autofill for Canada only.
+
+Requirements:
+- autocomplete suggestions must only allow Canadian addresses
+- user should be able to search naturally
+- when an address is selected, save structured values if available:
+  - address_full
+  - address_street
+  - address_city
+  - address_province
+  - address_postal_code
+  - address_country
+- block non-Canadian addresses
+- address_country must resolve to Canada only
+- keep one human-readable full address field as well
+
+If a place API is already available in the stack, use it.
+If not, integrate a reliable address autocomplete provider that supports Canada-only filtering.
+
+Frontend behavior:
+- show address suggestions as user types
+- selecting a suggestion populates the address fields
+- if structured parsing fails, still keep address_full
+- show a validation error if selected address is outside Canada
+
+--------------------------------------------------
+PART 3 — FILE UPLOADS
+
+Required uploads:
+- Photo
+- Resume
+
+Accepted formats:
+Photo:
+- .jpg
+- .jpeg
+- .png
+- .webp
+
+Resume:
+- .pdf
+- .doc
+- .docx
+
+Requirements:
+- validate file type on frontend and backend
+- validate max file size
+- show upload progress or clear upload state
+- securely store files
+- save file metadata in database
+- generate secure one-click download access for staff
+- uploaded filenames should be visible in admin side
+- make it easy to preview when feasible
+
+Suggested limits:
+- photo max 10 MB
+- resume max 10 MB
+
+Suggested stored metadata:
+- original_filename
+- mime_type
+- file_size
+- storage_key
+- uploaded_at
+
+--------------------------------------------------
+PART 4 — DATABASE MODEL
+
+Create or update applicant table and related file handling as needed.
+
+Suggested applicant fields:
+
+id
+full_name
+phone
+address_full
+address_street
+address_city
+address_province
+address_postal_code
+address_country
+applying_for
+job_posting_source
+photo_storage_key
+photo_filename
+photo_mime_type
+photo_file_size
+resume_storage_key
+resume_filename
+resume_mime_type
+resume_file_size
+status
+submitted_at
+created_at
+updated_at
+
+Status default:
+new
+
+Optional future-safe statuses:
+new
+reviewing
+interviewed
+hired
+rejected
+
+Use Toronto time for submitted_at / created_at / updated_at display logic.
+
+--------------------------------------------------
+PART 5 — BACKEND SUBMISSION API
+
+Create backend endpoint(s) for applicant submission.
+
+Requirements:
+- validate required fields
+- validate phone number format reasonably
+- validate Canadian address
+- validate files exist
+- validate allowed MIME/file types
+- store record in database
+- store files and metadata
+- return success response with applicant ID
+- log submission errors clearly
+- prevent partial broken submissions
+
+If file upload succeeds but DB insert fails, handle cleanup if possible.
+If DB insert succeeds but one upload fails, fail safely and do not leave inconsistent state.
+
+--------------------------------------------------
+PART 6 — ADMIN / CRM VIEW
+
+Create admin-side applicant management view so staff can review submissions easily.
+
+Required list columns:
+- Full Name
+- Phone Number
+- Applying For
+- Job Posting Source
+- Address
+- Photo
+- Resume
+- Status
+- Submitted Date
+
+Required functionality:
+- list all applicants
+- search by name or phone
+- filter by status
+- sort by newest first by default
+- one-click download for photo
+- one-click download for resume
+- quick preview if feasible
+- open applicant detail view
+
+Applicant detail view should show:
+- full name
+- phone
+- full address
+- applying for
+- job posting source
+- uploaded photo
+- uploaded resume
+- status
+- submitted date
+
+Download actions must be obvious and easy.
+
+--------------------------------------------------
+PART 7 — APPLY.WFCONNECT.ORG ROUTING / HOSTING
+
+Set up the application form to work on:
+
+apply.wfconnect.org
+
+Implementation requirements:
+- route correctly to public application page
+- make sure it does not require applicant login
+- secure admin routes separately
+- ensure CORS / asset / upload configuration works for subdomain usage
+- ensure production environment variables support this domain
+
+--------------------------------------------------
+PART 8 — UX DETAILS
+
+Applicant form UX should feel polished.
+
+Required UX behaviors:
+- show inline validation
+- preserve entered values when possible if there is a validation error
+- clear submit button text such as:
+  Submit Application
+- after successful submit, show a success screen/message
+- success message should confirm application was received
+- do not expose internal IDs unless helpful
+- make upload controls obvious and easy on mobile
+- use card-based or clean form layout
+- avoid clutter
+
+--------------------------------------------------
+PART 9 — SECURITY
+
+- sanitize all user inputs
+- validate again on backend even if validated in frontend
+- do not allow arbitrary file execution
+- protect file URLs appropriately
+- only authorized staff/admin can access applicant files from CRM side
+- rate limit public submission endpoint if possible
+- do not expose internal storage paths directly unless using secure signed access
+
+--------------------------------------------------
+PART 10 — OPTIONAL NICE-TO-HAVE
+
+If easy within current stack, also add:
+- duplicate detection warning by same phone + full name within recent period
+- preview thumbnail for photo in admin list/detail
+- resume icon/preview label
+- source dropdown with option for “Other”
+- confirmation email or SMS later-ready architecture, but do not block this feature on that
+
+--------------------------------------------------
+ACCEPTANCE CRITERIA
+
+1. Public applicant form works at apply.wfconnect.org
+2. Applicants can enter:
+   - full name
+   - Canada-only address with autocomplete
+   - phone number
+   - position applying for
+   - where they saw the posting
+   - photo upload
+   - resume upload
+3. Non-Canadian addresses are blocked
+4. Photo and resume uploads are validated and stored properly
+5. Staff can easily see submissions in CRM/admin view
+6. Staff can download photo and resume in one click
+7. UI works well on mobile and desktop
+8. Data is saved reliably and securely
+9. The implementation is production-ready, not mock-only
+
+Now implement the actual code changes, wire frontend + backend + database + admin UI, and ensure the feature works end-to-end.

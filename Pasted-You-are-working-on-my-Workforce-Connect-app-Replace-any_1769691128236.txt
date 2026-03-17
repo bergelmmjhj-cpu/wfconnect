@@ -1,0 +1,96 @@
+You are working on my Workforce Connect app. Replace any “Quo” concept entirely.
+
+Update: DO NOT use any external SMS APIs (Telnyx/Twilio). The Communications system must be INTERNAL within the app (in-app messaging only). No phone-number texting. No webhooks. No provider message IDs.
+
+Goal
+- Create a “Communications” section dedicated ONLY to Worker communication (HR ↔ Workers).
+- No client messaging in this section. Only workers.
+- HR must have full visibility of all messages (read-only oversight + ability to message workers).
+
+Core Requirements
+1) Internal Messaging Only
+- Messages are sent and received inside the app UI.
+- Notifications can be in-app (and optional email/push later), but no SMS provider integration.
+
+2) Data Model (use or create these entities; if they exist, refactor to match)
+A) Conversation entity
+- Fields:
+  - id
+  - created_at, updated_at
+  - type: "hr_worker" (only)
+  - worker_user_id
+  - hr_user_id (optional if multiple HR; can be null and use participants list)
+  - last_message_at
+  - last_message_preview
+  - is_archived (boolean, default false)
+
+B) Message entity (main source of truth)
+- Fields:
+  - id
+  - created_at
+  - conversation_id (FK)
+  - sender_user_id (FK)
+  - recipient_user_id (FK)
+  - body (text)
+  - message_type ("text" | "image" | "file") default "text"
+  - media_url (optional)
+  - read_at (timestamp nullable)
+  - status ("sent" | "delivered" | "read")  // since internal, “delivered” means stored successfully
+  - deleted_at (nullable) optional
+
+C) MessageLog entity (audit trail for compliance)
+- Fields:
+  - id
+  - created_at
+  - message_id (FK)
+  - event ("created" | "delivered" | "read" | "edited" | "deleted")
+  - actor_user_id (FK)
+  - metadata (json) optional (e.g., previous_body on edit)
+
+Rules
+- Every time a message is created, also insert a MessageLog row with event="created".
+- When recipient opens the conversation, mark messages as read (set read_at) and create MessageLog event="read".
+- ONLY HR and the specific Worker can access their conversation.
+- HR admins can view all HR↔Worker conversations.
+
+Backend (internal only)
+- Implement backend functions/endpoints:
+  1) createOrGetConversation(worker_user_id): returns conversation_id (type must be "hr_worker")
+  2) sendInternalMessage(conversation_id, recipient_user_id, body, message_type, media_url):
+     - auth: sender must be HR or the worker in that conversation
+     - create Message row with status="delivered"
+     - create MessageLog row event="created"
+     - update Conversation.last_message_at + preview
+  3) listConversationsForHR(filters/search): returns conversations with worker name, unread count, last message preview/time
+  4) listConversationsForWorker(): returns only that worker’s conversation(s) with HR
+  5) getMessages(conversation_id, pagination): returns messages newest-last
+  6) markAsRead(conversation_id): marks unread messages addressed to current user as read + logs events
+
+Frontend UI
+A) HR “Worker Communications” Page
+- Left panel: searchable worker list + last message preview + unread badge + last message time
+- Main panel: message thread with infinite scroll/pagination
+- Composer: send text + optional attachment upload (if supported)
+- Must show worker name + worker phone/email as profile info (for HR reference only; not used for SMS)
+
+B) Worker “Messages” Page
+- Shows their conversation with HR
+- Worker can message HR
+- Worker can see read status (optional)
+
+Real-time (internal)
+- Implement real-time updates using in-app realtime (WebSockets or your existing realtime system).
+- If realtime is not available, implement polling every 3–5 seconds as fallback.
+- No external providers.
+
+Cleanup / Refactor
+- Remove/disable any SMS-specific code paths and entities:
+  - sendVirtualPhoneSMS, handleTelnyxInboundSMS, virtualPhoneWebSocket
+  - SMSMessage, SMSMessageLog tied to providers
+- Replace with internal Conversation/Message/MessageLog flow above.
+
+Acceptance Criteria
+- HR can open “Worker Communications”, select a worker, see full message history, and send a message.
+- Worker can see and reply in-app.
+- All messages persist in DB and are visible to HR with audit logs.
+- No external SMS/Telnyx/Twilio usage anywhere.

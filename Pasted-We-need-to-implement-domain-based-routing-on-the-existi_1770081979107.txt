@@ -1,0 +1,96 @@
+We need to implement domain-based routing on the existing backend server.
+
+Goal
+
+Serve different content based on the request hostname:
+
+wfconnect.org → Serve the existing marketing landing page
+
+app.wfconnect.org → Serve the Expo Web app (static web build), NOT the landing page
+
+Current Situation
+
+Both domains currently point to the same backend
+
+The backend already supports hostname-based routing (used for guide.wfconnect.org)
+
+There is no Expo web build yet
+
+Backend is Express.js
+
+Required Changes
+1. Create Expo Web Build
+
+Add a build step that generates a static Expo web build
+
+Use Expo’s web export:
+
+npx expo export --platform web
+
+Output directory must be named web-dist/
+
+Ensure web-dist/index.html exists after build
+
+2. Backend Hostname Detection
+
+Update the Express server so it detects the hostname:
+
+Use req.hostname
+
+Normalize to lowercase
+
+Logic:
+
+If hostname === app.wfconnect.org
+
+Serve static files from web-dist/
+
+Use SPA fallback: all non-API GET routes return web-dist/index.html
+
+Else (default, including wfconnect.org)
+
+Serve the existing marketing landing page as-is
+
+3. Routing Rules
+
+API routes (/api/*) must continue to work for both domains
+
+Static assets must be cached safely
+
+Do NOT break existing routes or guide subdomain behavior
+
+4. Fail Loudly if Web Build Is Missing
+
+If a request comes from app.wfconnect.org and web-dist/index.html does not exist:
+
+Return HTTP 500 with a clear error message
+
+5. Deployment
+
+Ensure the web export runs before the server starts
+
+Update build/start scripts if needed so production always has web-dist/
+
+Acceptance Criteria
+
+https://wfconnect.org → marketing landing page
+
+https://app.wfconnect.org → Expo web app loads
+
+Refreshing deep links (e.g. /login) on app subdomain works
+
+API routes work on both domains
+
+No redirect loops
+
+No dev servers or port-based routing
+
+Deliverables
+
+Updated Express server code
+
+Updated build scripts (if needed)
+
+Clear comments explaining hostname routing logic
+
+Proceed with implementation.
