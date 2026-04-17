@@ -1,15 +1,14 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Apply to Join - Workforce Connect Management</title>
+    <title>Worker Application Form</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Apply to become a subcontractor with Workforce Connect Management. Join our team of professional cleaners and hospitality staff." />
+    <meta name="description" content="Worker application form for independent contractor applicants." />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://wfconnect.org/apply" />
+    <link rel="canonical" href="/contractor-apply" />
     <meta name="theme-color" content="#1E40AF" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/logo.png" />
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,40 +58,7 @@
       .header-container {
         max-width: 800px;
         margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      
-      .header-logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        text-decoration: none;
-        color: var(--primary);
-        font-weight: 700;
-        font-size: 16px;
-      }
-      
-      .header-logo img {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        object-fit: contain;
-      }
-      
-      .header-back {
-        color: var(--primary);
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      
-      .header-back:hover {
-        text-decoration: underline;
+        min-height: 1px;
       }
       
       .main {
@@ -436,32 +402,14 @@
       }
       
       .footer {
-        background: var(--primary-dark);
-        color: white;
         padding: 32px 24px;
         text-align: center;
         margin-top: 48px;
       }
       
-      .footer-logo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 16px;
-        font-weight: 700;
-        font-size: 16px;
-      }
-      
-      .footer-logo img {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-      }
-      
       .footer-copyright {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--text-secondary);
       }
       
       .error-message {
@@ -571,26 +519,14 @@
   </head>
   <body>
     <header class="header">
-      <div class="header-container">
-        <a href="https://wfconnect.org" class="header-logo">
-          <img src="/logo.png" alt="Workforce Connect Logo" />
-          <span>Workforce Connect</span>
-        </a>
-        <a href="/guide" class="header-back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-          Back to Guide
-        </a>
-      </div>
+      <div class="header-container"></div>
     </header>
 
     <main class="main">
       <div class="page-header">
         <h1 class="page-title">Worker Application Form</h1>
         <p class="page-subtitle">
-          Complete this form to apply as an independent subcontractor with Workforce Connect Management. All fields marked with <span style="color: var(--error);">*</span> are required.
+          Complete this form to apply as an independent contractor. All required fields must be filled.
         </p>
       </div>
 
@@ -690,7 +626,7 @@
           <div class="checkbox-group">
             <label class="checkbox-item">
               <input type="checkbox" name="backgroundCheckConsent" required>
-              <span class="checkbox-label">I consent to Workforce Connect conducting necessary background checks as part of the application process. <span style="color: var(--error);">*</span></span>
+              <span class="checkbox-label">I consent to necessary background checks as part of the application process. <span style="color: var(--error);">*</span></span>
             </label>
           </div>
         </section>
@@ -992,7 +928,7 @@
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
               </svg>
             </div>
-            <p class="highlight-text">Please read and acknowledge each item carefully. Please ensure your payment information in Section H is accurate. You can update it anytime through the Workforce Connect app.</p>
+            <p class="highlight-text">Please read and acknowledge each item carefully. Ensure your payment information in Section H is accurate. You can update it at any time.</p>
           </div>
           
           <div class="checkbox-group">
@@ -1000,7 +936,7 @@
               <input type="checkbox" name="titoAcknowledgment" required>
               <span class="checkbox-label bold">TITO System Acknowledgment <span style="color: var(--error);">*</span></span>
             </label>
-            <p style="margin-left: 32px; font-size: 14px; color: var(--text-secondary);">I understand that I must accurately submit Time-In/Time-Out (TITO) records through the Workforce Connect platform. GPS verification may be required. Falsification of time records may result in immediate termination.</p>
+            <p style="margin-left: 32px; font-size: 14px; color: var(--text-secondary);">I understand that I must accurately submit Time-In/Time-Out (TITO) records through the platform. GPS verification may be required. Falsification of time records may result in immediate termination.</p>
             
             <label class="checkbox-item" style="margin-top: 16px;">
               <input type="checkbox" name="siteRulesAcknowledgment" required>
@@ -1018,11 +954,11 @@
               <input type="checkbox" name="privacyConsent" required>
               <span class="checkbox-label bold">Privacy Policy <span style="color: var(--error);">*</span></span>
             </label>
-            <p style="margin-left: 32px; font-size: 14px; color: var(--text-secondary);">I consent to the collection, use, and protection of my personal data as outlined in Workforce Connect's <a href="/privacy" style="color: var(--primary);">Privacy Policy</a>, in compliance with GDPR and PIPEDA regulations.</p>
+            <p style="margin-left: 32px; font-size: 14px; color: var(--text-secondary);">I consent to the collection, use, and protection of my personal data as outlined in the <a href="/privacy" style="color: var(--primary);">Privacy Policy</a>, in compliance with applicable privacy regulations.</p>
             
             <label class="checkbox-item" style="margin-top: 16px;">
               <input type="checkbox" name="marketingConsent">
-              <span class="checkbox-label">I agree to receive promotional communications and updates from Workforce Connect (optional)</span>
+              <span class="checkbox-label">I agree to receive promotional communications and updates (optional)</span>
             </label>
           </div>
         </section>
@@ -1052,7 +988,7 @@
           <div class="consent-contact-block">
             <label class="checkbox-item">
               <input type="checkbox" name="consentToContact" required aria-describedby="consentToContactHelper consentToContactError">
-              <span class="checkbox-label">I agree to be contacted by Workforce Connect via SMS text messages and phone calls regarding my application, job opportunities, and onboarding. Message and data rates may apply. I can opt out at any time.</span>
+              <span class="checkbox-label">I agree to be contacted by SMS text messages and phone calls regarding my application, job opportunities, and onboarding. Message and data rates may apply. I can opt out at any time.</span>
             </label>
             <p id="consentToContactHelper" class="consent-contact-helper">We will only contact you regarding your application. We do not send spam.</p>
             <p id="consentToContactError" class="consent-contact-error" aria-hidden="true">You must agree to be contacted to proceed.</p>
@@ -1074,18 +1010,14 @@
           </svg>
         </div>
         <h2 class="success-title">Application Submitted!</h2>
-        <p class="success-message">Thank you for applying to Workforce Connect. Our HR team will review your application and contact you within 2-3 business days.</p>
-        <a href="https://wfconnect.org" class="success-btn">Return to Website</a>
+        <p class="success-message">Thank you for your application. Our team will review it and contact you within 2-3 business days.</p>
+        <a href="/contractor-apply" class="success-btn">Return to Form</a>
       </div>
     </div>
 
     <footer class="footer">
-      <div class="footer-logo">
-        <img src="/logo.png" alt="Workforce Connect Logo" />
-        <span>Workforce Connect Management</span>
-      </div>
       <p class="footer-copyright">
-        &copy; 2025 Workforce Connect Management. All rights reserved.
+        &copy; 2025. All rights reserved.
       </p>
     </footer>
 

@@ -1,14 +1,13 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <title>Update Payment Information - Workforce Connect Management</title>
+    <title>Update Payment Information</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="description" content="Submit or update your payment and banking details for Workforce Connect Management." />
+    <meta name="description" content="Submit or update payment and banking details." />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#1E40AF" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/logo.png" />
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,40 +57,7 @@
       .header-container {
         max-width: 800px;
         margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      
-      .header-logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        text-decoration: none;
-        color: var(--primary);
-        font-weight: 700;
-        font-size: 16px;
-      }
-      
-      .header-logo img {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        object-fit: contain;
-      }
-      
-      .header-back {
-        color: var(--primary);
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      
-      .header-back:hover {
-        text-decoration: underline;
+        min-height: 1px;
       }
       
       .main {
@@ -310,51 +276,14 @@
       }
       
       .footer {
-        background: var(--primary-dark);
-        color: white;
         padding: 32px 24px;
         text-align: center;
         margin-top: 48px;
       }
       
-      .footer-logo {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 16px;
-        font-weight: 700;
-        font-size: 16px;
-      }
-      
-      .footer-logo img {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-      }
-      
-      .footer-links {
-        margin-bottom: 16px;
-        display: flex;
-        justify-content: center;
-        gap: 24px;
-        flex-wrap: wrap;
-      }
-      
-      .footer-links a {
-        color: rgba(255, 255, 255, 0.8);
-        text-decoration: none;
-        font-size: 14px;
-      }
-      
-      .footer-links a:hover {
-        color: white;
-        text-decoration: underline;
-      }
-      
       .footer-copyright {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--text-secondary);
       }
       
       .error-message {
@@ -474,19 +403,7 @@
   </head>
   <body>
     <header class="header">
-      <div class="header-container">
-        <a href="https://wfconnect.org" class="header-logo">
-          <img src="/logo.png" alt="Workforce Connect Logo" />
-          <span>Workforce Connect</span>
-        </a>
-        <a href="/guide" class="header-back">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"></line>
-            <polyline points="12 19 5 12 12 5"></polyline>
-          </svg>
-          Back to Guide
-        </a>
-      </div>
+      <div class="header-container"></div>
     </header>
 
     <main class="main">
@@ -589,22 +506,12 @@
         </div>
         <h3 class="success-title">Payment Info Submitted!</h3>
         <p class="success-message">Your payment details have been saved successfully. Our team will use this information for processing your payments.</p>
-        <a href="/guide" class="success-btn">Back to Guide</a>
+        <a href="/apply" class="success-btn">Back to Application</a>
       </div>
     </div>
 
     <footer class="footer">
-      <div class="footer-logo">
-        <img src="/logo.png" alt="Workforce Connect Logo" />
-        <span>Workforce Connect</span>
-      </div>
-      <div class="footer-links">
-        <a href="/apply">Apply</a>
-        <a href="/guide">Contractor Guide</a>
-        <a href="/support">Support</a>
-        <a href="/privacy">Privacy Policy</a>
-      </div>
-      <p class="footer-copyright">Workforce Connect Management. All rights reserved.</p>
+      <p class="footer-copyright">All rights reserved.</p>
     </footer>
 
     <script>

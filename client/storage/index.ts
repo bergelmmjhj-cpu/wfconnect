@@ -592,7 +592,7 @@ const defaultAgreementTemplate: SubcontractorAgreementTemplate = {
 
 1. SUBCONTRACTOR STATUS (NOT EMPLOYMENT)
 
-1.1 The Subcontractor acknowledges and agrees that all individuals providing services through Workforce Connect do so strictly as INDEPENDENT SUBCONTRACTORS.
+1.1 The Subcontractor acknowledges and agrees that all individuals providing services through the Company do so strictly as INDEPENDENT SUBCONTRACTORS.
 
 1.2 This Agreement does NOT create an employer-employee relationship. The Subcontractor understands and agrees that:
 - You are NOT an employee
@@ -607,7 +607,7 @@ const defaultAgreementTemplate: SubcontractorAgreementTemplate = {
 
 2. SCOPE OF SERVICES
 
-2.1 The Subcontractor provides housekeeping, janitorial, hospitality, or related services on a shift-based or project-based basis for Workforce Connect and/or its hotel and janitorial clients ("Clients").
+2.1 The Subcontractor provides housekeeping, janitorial, hospitality, or related services on a shift-based or project-based basis for the Company and/or its hotel and janitorial clients ("Clients").
 
 2.2 The Subcontractor agrees to:
 - Perform services professionally and safely
@@ -622,7 +622,7 @@ const defaultAgreementTemplate: SubcontractorAgreementTemplate = {
 Work performed for hotel-based assignments follows a bi-weekly reporting cutoff period.
 
 3.2 Client-Dependent Payment Release
-Payment to the Subcontractor is released ONLY AFTER Workforce Connect receives payment from the hotel or janitorial Client.
+Payment to the Subcontractor is released ONLY AFTER the Company receives payment from the hotel or janitorial Client.
 
 3.3 Once Client funds are received and cleared:
 - The Subcontractor's corresponding payment will be processed and released immediately
@@ -640,11 +640,11 @@ Payment to the Subcontractor is released ONLY AFTER Workforce Connect receives p
 4.1 The Subcontractor understands and agrees that:
 - There is NO guaranteed pay date
 - Payment release depends entirely on Client remittance
-- Workforce Connect is not responsible for delays caused by Clients or banking institutions
+- The Company is not responsible for delays caused by Clients or banking institutions
 
 5. PAYMENT METHODS
 
-5.1 Workforce Connect supports ONLY the following payment methods:
+5.1 The Company supports ONLY the following payment methods:
 
 A. Direct Deposit (EFT)
 - Requires valid banking details or a void cheque
@@ -659,13 +659,13 @@ C. Company Cheque
 
 6.1 The Subcontractor understands that payment cannot be processed until valid payment details are submitted and approved.
 
-6.2 The Subcontractor must complete the official Payment Information Form provided by Workforce Connect.
+6.2 The Subcontractor must complete the official Payment Information Form provided by the Company.
 
-6.3 Incorrect, incomplete, or missing payment information will result in payment delays, for which Workforce Connect is not liable.
+6.3 Incorrect, incomplete, or missing payment information will result in payment delays, for which the Company is not liable.
 
 7. TIMEKEEPING & VERIFICATION (TITO)
 
-7.1 The Subcontractor must accurately submit Time-In / Time-Out (TITO) records through the Workforce Connect platform.
+7.1 The Subcontractor must accurately submit Time-In / Time-Out (TITO) records through the designated platform.
 
 7.2 Server-recorded UTC timestamps are authoritative. Corrections require valid justification.
 
@@ -681,7 +681,7 @@ C. Company Cheque
 
 9.1 Either Party may terminate this Agreement with written notice.
 
-9.2 Workforce Connect may immediately terminate access for:
+9.2 The Company may immediately terminate access for:
 - Fraud or misrepresentation
 - Safety or policy violations
 - Breach of this Agreement
@@ -706,7 +706,7 @@ Please provide your initials to confirm your understanding and acceptance of the
 
 A. Subcontractor Status (Section 1) - I understand that I am an independent subcontractor, NOT an employee, and I am responsible for my own taxes.
 
-B. Pay Structure (Section 3 & 4) - I understand that payment is released only after Workforce Connect receives payment from the Client, and there is no guaranteed pay date.
+B. Pay Structure (Section 3 & 4) - I understand that payment is released only after the Company receives payment from the Client, and there is no guaranteed pay date.
 
 C. TITO Accuracy (Section 7) - I agree to accurately submit all Time-In / Time-Out records and understand that falsification may result in termination.
 
