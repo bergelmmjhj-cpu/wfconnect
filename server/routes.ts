@@ -1707,10 +1707,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      if (!req.body.consentToContact) {
+        res.status(400).json({
+          error: "You must agree to be contacted to proceed.",
+        });
+        return;
+      }
+
       const userAgent = req.headers["user-agent"] || null;
 
       const applicationData = {
         ...req.body,
+        consentToContact: true,
+        consentTimestamp: new Date(),
+        consentIp: req.ip,
         ip,
         userAgent,
       };
