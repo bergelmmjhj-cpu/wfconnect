@@ -247,6 +247,9 @@ export const workerApplications = pgTable("worker_applications", {
   workerAgreementConsent: boolean("worker_agreement_consent").default(false),
   privacyConsent: boolean("privacy_consent").default(false),
   marketingConsent: boolean("marketing_consent").default(false),
+  consentToContact: boolean("consent_to_contact").notNull().default(false),
+  consentTimestamp: timestamp("consent_timestamp"),
+  consentIp: text("consent_ip"),
   
   // Electronic Signature
   signature: text("signature").notNull(), // Typed full name as signature

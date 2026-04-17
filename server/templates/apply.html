@@ -384,6 +384,25 @@
         text-align: center;
         padding: 32px 0;
       }
+
+      .consent-contact-block {
+        text-align: left;
+        margin: 0 auto 14px;
+        max-width: 640px;
+      }
+
+      .consent-contact-helper {
+        margin: 6px 0 0 32px;
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .consent-contact-error {
+        display: none;
+        margin: 6px 0 0 32px;
+        color: var(--error);
+        font-size: 13px;
+      }
       
       .submit-btn {
         display: inline-block;
@@ -1030,6 +1049,14 @@
 
         <!-- Submit Section -->
         <div class="submit-section">
+          <div class="consent-contact-block">
+            <label class="checkbox-item">
+              <input type="checkbox" name="consentToContact" required aria-describedby="consentToContactHelper consentToContactError">
+              <span class="checkbox-label">I agree to be contacted by Workforce Connect via SMS text messages and phone calls regarding my application, job opportunities, and onboarding. Message and data rates may apply. I can opt out at any time.</span>
+            </label>
+            <p id="consentToContactHelper" class="consent-contact-helper">We will only contact you regarding your application. We do not send spam.</p>
+            <p id="consentToContactError" class="consent-contact-error" aria-hidden="true">You must agree to be contacted to proceed.</p>
+          </div>
           <button type="submit" class="submit-btn" id="submitBtn">
             Submit Application
           </button>
@@ -1086,11 +1113,17 @@
         
         var form = e.target;
         var isValid = true;
+        var consentCheckbox = form.querySelector('input[name="consentToContact"]');
+        var consentError = document.getElementById('consentToContactError');
         
         // Clear previous errors
         form.querySelectorAll('.form-group.error').forEach(function(group) {
           group.classList.remove('error');
         });
+        if (consentError) {
+          consentError.style.display = 'none';
+          consentError.setAttribute('aria-hidden', 'true');
+        }
         
         // Validate required text inputs
         form.querySelectorAll('input[required], select[required]').forEach(function(input) {
@@ -1115,6 +1148,14 @@
             isValid = false;
           }
         });
+
+        if (consentCheckbox && !consentCheckbox.checked) {
+          isValid = false;
+          if (consentError) {
+            consentError.style.display = 'block';
+            consentError.setAttribute('aria-hidden', 'false');
+          }
+        }
         
         // Validate at least one role is selected
         var roleChecked = form.querySelectorAll('input[name="preferredRoles"]:checked').length > 0;
@@ -1181,6 +1222,7 @@
           workerAgreementConsent: form.workerAgreementConsent.checked,
           privacyConsent: form.privacyConsent.checked,
           marketingConsent: form.marketingConsent.checked,
+          consentToContact: form.consentToContact.checked,
           signature: form.signature.value,
           signatureDate: new Date().toISOString().split('T')[0]
         };
@@ -1203,7 +1245,7 @@
             document.getElementById('successModal').classList.add('show');
           } else {
             var errorData = await response.json();
-            alert('Error: ' + (errorData.message || 'Failed to submit application. Please try again.'));
+            alert('Error: ' + (errorData.error || errorData.message || 'Failed to submit application. Please try again.'));
             submitBtn.disabled = false;
             submitBtn.textContent = 'Submit Application';
           }
