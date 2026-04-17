@@ -2908,6 +2908,7 @@ Respond with exactly:
         addressPostalCode, addressCountry, applyingFor, jobPostingSource,
         photoData: photoDataIn, photoFilename, photoMimeType, photoFileSize,
         resumeData: resumeDataIn, resumeFilename, resumeMimeType, resumeFileSize,
+        consentToContact,
       } = req.body;
 
       if (!fullName?.trim()) return res.status(400).json({ error: "Full name required" });
@@ -2917,6 +2918,7 @@ Respond with exactly:
       if (!jobPostingSource?.trim()) return res.status(400).json({ error: "Job posting source required" });
       if (!photoDataIn) return res.status(400).json({ error: "Photo required" });
       if (!resumeDataIn) return res.status(400).json({ error: "Resume required" });
+      if (!consentToContact) return res.status(400).json({ error: "You must agree to be contacted to proceed." });
 
       const PHOTO_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
       const RESUME_TYPES = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
@@ -2956,6 +2958,9 @@ Respond with exactly:
         resumeMimeType: resumeMimeType || null,
         resumeFileSize: resumeFileSize || null,
         status: "new",
+        consentToContact: true,
+        consentTimestamp: now,
+        consentIp: req.ip || null,
         submittedAt: now,
       }).returning({ id: applicants.id });
 
